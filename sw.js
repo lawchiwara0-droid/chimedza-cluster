@@ -1,5 +1,5 @@
 // Change this number whenever you upload a new index.html, so phones pick up the update.
-const CACHE = 'chimedza-v2';
+const CACHE = 'chimedza-v3';
 const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {

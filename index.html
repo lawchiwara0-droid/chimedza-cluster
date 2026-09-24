@@ -87,8 +87,8 @@ const SEED=[
 {id:'CVT-SEC',name:'Chivata Secondary School',type:'SECONDARY',alias:''},
 {id:'MUR-PRI',name:'Muroyi Primary School',type:'PRIMARY',alias:''},
 {id:'MUR-SEC',name:'Muroyi Secondary School',type:'SECONDARY',alias:''}];
-let S={schools:SEED,cur:'DAN-SEC',classes:[],students:[],att:{},tests:[],marks:{}};
-let ui={tab:'home',cls:'',date:today(),month:today().slice(0,7),test:''};
+let S={schools:SEED,cur:'DAN-SEC',classes:[],students:[],att:{},tests:[],marks:{},charges:[],pay:[],adj:[]};
+let ui={tab:'home',cls:'',date:today(),month:today().slice(0,7),test:'',stu:'',rcpt:''};
 const $=id=>document.getElementById(id);
 function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function uid(){return (window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now()+'-'+Math.random().toString(16).slice(2)}
@@ -198,23 +198,81 @@ function viewHome(){
   const tile=(t,i,n,d)=>`<button class="tile" data-act="tab" data-v="${t}"><span>${i}</span><b>${n}</b><small>${d}</small></button>`;
   return `<div class="card"><h2>${esc(sc.name)}</h2><p class="hint" style="margin:0">${sc.type==='PRIMARY'?'Primary':'Secondary'} school${sc.alias?' &middot; also called '+esc(sc.alias):''}</p>
   <div class="tally" style="margin:8px 0 0"><b>${ss.length}</b> learners &middot; <b>${cs.length}</b> classes &middot; today <b>${p}</b> present, <b>${a}</b> absent, <b>${l}</b> late</div></div>
-  <div class="grid">${tile('register','\u{1F4CB}','Register','Daily attendance')}${tile('marks','\u{1F4DD}','Marks','Tests and results')}${tile('students','\u{1F465}','Learners','Classes and names')}${tile('summary','\u{1F4CA}','Summary','Attendance rates')}${tile('print','\u{1F5A8}\uFE0F','Print','Paper register')}${tile('cluster','\u{1F3EB}','Cluster','All nine schools')}${tile('backup','\u{1F4BE}','Backup','Export and merge')}</div>`;
+  <div class="grid">${tile('register','\u{1F4CB}','Register','Daily attendance')}${tile('marks','\u{1F4DD}','Marks','Tests and results')}${tile('students','\u{1F465}','Learners','Classes and names')}${tile('summary','\u{1F4CA}','Summary','Attendance rates')}${tile('print','\u{1F5A8}\uFE0F','Print','Paper register')}${tile('fees','\u{1F4B5}','Fees','Charges and payments')}${tile('cluster','\u{1F3EB}','Cluster','All nine schools')}${tile('backup','\u{1F4BE}','Backup','Export and merge')}</div>`;
 }
 
 function viewCluster(){
-  let TL=0,TP=0,TA=0,TLt=0;
+  let TL=0,TP=0,TA=0,TLt=0,TCo=0;
   const rows=S.schools.map(sc=>{const cs=S.classes.filter(c=>c.schoolId===sc.id),ss=S.students.filter(x=>!x.archived&&cs.some(c=>c.id===x.classId));
-    let P=0,A=0,L=0;ss.forEach(x=>{const t=stats(x.id);P+=t.p;A+=t.a;L+=t.l});TL+=ss.length;TP+=P;TA+=A;TLt+=L;const r=pct(P,L,A);
-    return `<tr><td>${esc(sc.name.replace(' School',''))}</td><td>${ss.length}</td><td>${r===null?'-':r+'%'}</td></tr>`}).join('');
+    let P=0,A=0,L=0;ss.forEach(x=>{const t=stats(x.id);P+=t.p;A+=t.a;L+=t.l});let C=0;ss.forEach(x=>{C+=bal(x).p});TCo+=C;TL+=ss.length;TP+=P;TA+=A;TLt+=L;const r=pct(P,L,A);
+    return `<tr><td>${esc(sc.name.replace(' School',''))}</td><td>${ss.length}</td><td>${r===null?'-':r+'%'}</td><td>${fm(C)}</td></tr>`}).join('');
   const cr=pct(TP,TLt,TA);
-  return `<h2 style="font-size:18px;margin:6px 0">Cluster overview</h2><div class="tw"><table><tr><th>School</th><th>Learners</th><th>Attendance</th></tr>${rows}<tr><th>Cluster</th><th>${TL}</th><th>${cr===null?'-':cr+'%'}</th></tr></table></div>
+  return `<h2 style="font-size:18px;margin:6px 0">Cluster overview</h2><div class="tw"><table><tr><th>School</th><th>Learners</th><th>Attendance</th><th>Fees paid</th></tr>${rows}<tr><th>Cluster</th><th>${TL}</th><th>${cr===null?'-':cr+'%'}</th><th>${fm(TCo)}</th></tr></table></div>
   <p class="hint">This shows only data stored on this device. To combine schools, copy each school's backup and use Merge in the Backup tab.</p>`;
+}
+
+const fm=n=>'$'+(Math.round(n*100)/100).toFixed(2);
+const chargesFor=s=>{const c=S.classes.find(x=>x.id===s.classId);return S.charges.filter(h=>!h.cancelled&&c&&h.schoolId===c.schoolId&&(!h.classId||h.classId===s.classId))};
+function bal(s){const b=chargesFor(s).reduce((t,h)=>t+h.amount,0),w=S.adj.filter(a=>a.studentId===s.id).reduce((t,a)=>t+a.amount,0),p=S.pay.filter(x=>x.studentId===s.id&&!x.reversed).reduce((t,x)=>t+x.usd,0);return{b,w,p,o:b-w-p}}
+
+function ledger(s){
+  const x=bal(s),ps=S.pay.filter(p=>p.studentId===s.id),ws=S.adj.filter(a=>a.studentId===s.id);
+  return `<div class="card"><h2>${esc(s.name)}</h2><div class="tally">Billed <b>${fm(x.b)}</b> &middot; Waived <b>${fm(x.w)}</b> &middot; Paid <b>${fm(x.p)}</b> &middot; Owing <b>${fm(x.o)}</b></div>
+  <div class="row2" style="margin-bottom:8px"><input type="text" id="pa" inputmode="decimal" placeholder="Amount paid" aria-label="Amount paid"><select id="pc" aria-label="Currency"><option>USD</option><option>ZiG</option></select></div>
+  <div class="row2" style="margin-bottom:8px"><input type="text" id="pr" inputmode="decimal" placeholder="ZiG per 1 USD" aria-label="ZiG per 1 USD"><select id="pm" aria-label="Method"><option>Cash</option><option>EcoCash</option><option>Bank</option></select></div>
+  <button class="btn" data-act="pay">Save payment and receipt</button>
+  <h2 style="font-size:15px;margin:14px 0 6px">Waive fees</h2>
+  <div class="row2" style="margin-bottom:8px"><input type="text" id="wa" inputmode="decimal" placeholder="USD amount" aria-label="Waiver amount"><input type="text" id="wr" placeholder="Reason" aria-label="Waiver reason"></div>
+  <button class="ghost" data-act="waive">Save waiver</button>
+  <h2 style="font-size:15px;margin:14px 0 6px">History</h2>
+  ${ps.length+ws.length?'':'<p class="hint">Nothing recorded yet.</p>'}
+  ${ps.map(p=>`<p class="hint" style="margin:6px 0">${p.date} &middot; ${p.receipt} &middot; ${fm(p.usd)} ${p.reversed?'<b class="low">reversed: '+esc(p.reason||'')+'</b>':`<button class="ghost" data-act="rev" data-id="${p.id}">Reverse</button> <button class="ghost" data-act="rcpt" data-id="${p.id}">Receipt</button>`}</p>`).join('')}
+  ${ws.map(a=>`<p class="hint" style="margin:6px 0">${a.date} &middot; waived ${fm(a.amount)} &middot; ${esc(a.reason)}</p>`).join('')}
+  <input type="text" id="rv" placeholder="Reason, only needed to reverse a payment" aria-label="Reversal reason" style="margin-top:8px">
+  <p class="hint">Payments are never deleted. A mistake is reversed with a reason.</p></div>`;
+}
+
+function viewFees(){
+  if(!MC().length||!activeIn(ui.cls).length)return empty('Add a class and some learners first.');
+  const list=activeIn(ui.cls),cur=list.find(s=>s.id===ui.stu),chs=S.charges.filter(h=>h.schoolId===S.cur);
+  let B=0,W=0,P=0;list.forEach(s=>{const x=bal(s);B+=x.b;W+=x.w;P+=x.p});
+  return `<div class="bar"><select data-bind="cls" aria-label="Class">${classOpts()}</select></div>
+  <div class="tally">Billed <b>${fm(B)}</b> &middot; Waived <b>${fm(W)}</b> &middot; Collected <b>${fm(P)}</b> &middot; Owing <b>${fm(B-W-P)}</b> &middot; Collection rate <b>${B>0?Math.round(P/B*100)+'%':'-'}</b></div>
+  <ul class="rows">${list.map(s=>{const o=bal(s).o;return `<li><span class="nm">${esc(s.name)}</span><b class="${o>0.005?'low':''}">${fm(o)}</b><button class="ghost" data-act="stu" data-id="${s.id}">${cur&&cur.id===s.id?'Close':'Open'}</button></li>`}).join('')}</ul>
+  <p class="hint">Amounts in red are owed. Tap Open to take a payment.</p>
+  ${cur?ledger(cur):''}
+  <div class="card"><h2>Fee charges (USD)</h2>
+  <div class="row2" style="margin-bottom:8px"><input type="text" id="cn" placeholder="e.g. Term 3 levy" aria-label="Charge name"><input type="text" id="ca" inputmode="decimal" placeholder="USD per learner" aria-label="Amount in USD"></div>
+  <select id="cw" aria-label="Applies to" style="margin-bottom:8px"><option value="all">Whole school</option>${MC().map(c=>`<option value="${c.id}">${esc(c.name)} only</option>`).join('')}</select>
+  <button class="btn" data-act="addcharge">Add charge</button>
+  ${chs.map(h=>`<p class="hint" style="margin:8px 0">${esc(h.name)} &middot; ${fm(h.amount)} &middot; ${h.classId?esc(clsName(h.classId)):'whole school'} ${h.cancelled?'<b class="low">cancelled</b>':`<button class="ghost" data-act="cancelch" data-id="${h.id}">Cancel</button>`}</p>`).join('')}
+  <p class="hint">A charge applies to every active learner it covers. Fees are set in USD. ZiG payments are converted with the rate you type.</p></div>`;
+}
+
+function viewReceipt(){
+  const p=S.pay.find(x=>x.id===ui.rcpt),s=p&&S.students.find(x=>x.id===p.studentId);
+  if(!p||!s)return empty('Receipt not found.');
+  const sc=S.schools.find(z=>z.id===p.schoolId)||curSchool();
+  return `<div class="pr card"><h2>${esc(sc.name)}</h2><p><b>Receipt ${esc(p.receipt)}</b> &middot; ${p.date}</p>
+  <p>Learner: <b>${esc(s.name)}</b> (${esc(clsName(s.classId))})</p>
+  <p>Amount: <b>${p.cur==='USD'?fm(p.amount):'ZiG '+p.amount.toFixed(2)+' at '+p.rate+' = '+fm(p.usd)}</b></p>
+  <p>Method: ${esc(p.method)}</p><p>Balance now: <b>${fm(bal(s).o)}</b></p>
+  ${p.reversed?'<p><b>REVERSED: '+esc(p.reason||'')+'</b></p>':''}<p>Received by: ______________________</p></div>
+  <button class="btn np" data-act="print">Print receipt</button> <button class="ghost np" data-act="tab" data-v="fees">Back to fees</button>`;
+}
+
+function payCsv(){
+  const q=v=>'"'+String(v).replace(/"/g,'""')+'"',out=['date,receipt,school,class,learner,amount,currency,rate,usd,method,status,reason'];
+  S.pay.forEach(p=>{const s=S.students.find(x=>x.id===p.studentId)||{};out.push([p.date,p.receipt,schoolOf(s.classId),clsName(s.classId),s.name||'',p.amount,p.cur,p.rate,p.usd,p.method,p.reversed?'Reversed':'Paid',p.reason||''].map(q).join(','))});
+  return out.join('\n');
 }
 
 function viewBackup(){
   return `
   <div class="card"><h2>Attendance spreadsheet (CSV)</h2><textarea id="csvbox" readonly>${esc(csv())}</textarea>
   <p class="hint">Copy this and paste it into Excel, Google Sheets or WhatsApp.</p><button class="btn" data-act="copy" data-v="csvbox">Copy CSV</button></div>
+  <div class="card"><h2>Payments spreadsheet (CSV)</h2><textarea id="csvbox3" readonly>${esc(payCsv())}</textarea>
+  <p class="hint">Includes reversed payments, marked as reversed.</p><button class="btn" data-act="copy" data-v="csvbox3">Copy payments CSV</button></div>
   <div class="card"><h2>Marks spreadsheet (CSV)</h2><textarea id="csvbox2" readonly>${esc(marksCsv())}</textarea>
   <p class="hint">Blank marks are left out, not written as zero.</p><button class="btn" data-act="copy" data-v="csvbox2">Copy marks CSV</button></div>
   <div class="card"><h2>Full backup</h2><textarea id="bkbox" readonly>${esc(JSON.stringify(S))}</textarea>
@@ -227,7 +285,7 @@ function render(){
   {const m=MC();if(!m.length)ui.cls='';else if(!m.find(c=>c.id===ui.cls))ui.cls=m[0].id}
   $('sch').innerHTML=S.schools.map(z=>`<option value="${z.id}"${z.id===S.cur?' selected':''}>${esc(z.name)}</option>`).join('');
   const T=[['home','🏠','Home'],['register','📋','Register'],['marks','📝','Marks'],['students','👥','Learners']];
-  $('app').innerHTML=`<nav>${T.map(t=>`<button class="${ui.tab===t[0]?'on':''}" data-act="tab" data-v="${t[0]}"><span>${t[1]}</span>${t[2]}</button>`).join('')}</nav>`+({home:viewHome,cluster:viewCluster,register:viewRegister,students:viewStudents,marks:viewMarks,summary:viewSummary,print:viewPrint,backup:viewBackup}[ui.tab])();
+  $('app').innerHTML=`<nav>${T.map(t=>`<button class="${ui.tab===t[0]?'on':''}" data-act="tab" data-v="${t[0]}"><span>${t[1]}</span>${t[2]}</button>`).join('')}</nav>`+({home:viewHome,cluster:viewCluster,fees:viewFees,receipt:viewReceipt,register:viewRegister,students:viewStudents,marks:viewMarks,summary:viewSummary,print:viewPrint,backup:viewBackup}[ui.tab])();
 }
 
 document.addEventListener('click',e=>{
@@ -244,6 +302,23 @@ document.addEventListener('click',e=>{
     save();toast(lines.length+' added')}
   else if(act==='archive'){const s=S.students.find(x=>x.id===id);if(s){s.archived=true;save();toast('Archived')}}
   else if(act==='saveteacher'){const c=S.classes.find(x=>x.id===ui.cls);if(c){c.teacher=$('tname').value.trim();c.ec=$('tec').value.trim().toUpperCase();save();toast('Teacher saved')}}
+  else if(act==='stu'){ui.stu=ui.stu===id?'':id}
+  else if(act==='rcpt'){ui.rcpt=id;ui.tab='receipt'}
+  else if(act==='addcharge'){const n=$('cn').value.trim(),a=parseFloat($('ca').value),w=$('cw').value;
+    if(!n||!(a>0)){toast('Enter a charge name and USD amount');return}
+    S.charges.push({id:uid(),schoolId:S.cur,classId:w==='all'?'':w,name:n,amount:a,date:today()});save();toast('Charge added')}
+  else if(act==='cancelch'){const h=S.charges.find(x=>x.id===id);if(h){h.cancelled=true;save();toast('Charge cancelled')}}
+  else if(act==='waive'){const a=parseFloat($('wa').value),r=$('wr').value.trim();
+    if(!(a>0)||!r){toast('Enter an amount and a reason');return}
+    S.adj.push({id:uid(),studentId:ui.stu,amount:a,reason:r,date:today()});save();toast('Waiver saved')}
+  else if(act==='rev'){const r=$('rv').value.trim();if(!r){toast('Type the reason first');return}
+    const p=S.pay.find(x=>x.id===id);if(p&&!p.reversed){p.reversed=true;p.reason=r;p.revDate=today();save();toast('Payment reversed')}}
+  else if(act==='pay'){const s=S.students.find(x=>x.id===ui.stu),a=parseFloat($('pa').value),cur=$('pc').value,rt=parseFloat($('pr').value);
+    if(!s||!(a>0)){toast('Enter the amount paid');return}
+    if(cur==='ZiG'&&!(rt>0)){toast('Enter the ZiG rate for 1 USD');return}
+    const u=cur==='USD'?a:a/rt,n=S.pay.filter(x=>x.schoolId===S.cur).length+1;
+    const p={id:uid(),schoolId:S.cur,studentId:s.id,amount:a,cur,rate:cur==='USD'?1:rt,usd:Math.round(u*100)/100,method:$('pm').value,date:today(),receipt:S.cur+'-'+String(n).padStart(4,'0'),reversed:false};
+    S.pay.push(p);ui.rcpt=p.id;ui.tab='receipt';save()}
   else if(act==='addtest'){const nm=$('tn').value.trim(),sb=$('ts').value.trim(),mx=parseFloat($('tm').value),pp=parseFloat($('tp').value)||50;
     if(!nm||!sb||!(mx>0)){toast('Enter test name, subject and total marks');return}
     const t={id:uid(),classId:ui.cls,name:nm,subject:sb,max:mx,pass:pp,date:ui.date};S.tests.push(t);ui.test=t.id;save();toast('Test created')}
@@ -251,12 +326,13 @@ document.addEventListener('click',e=>{
   else if(act==='copy'){const t=$(v);t.select();let ok=false;try{ok=document.execCommand('copy')}catch(x){}
     if(navigator.clipboard){navigator.clipboard.writeText(t.value).then(()=>toast('Copied'),()=>toast(ok?'Copied':'Press and hold to copy'))}else toast(ok?'Copied':'Press and hold to copy');return}
   else if(act==='merge'){try{const d=JSON.parse($('rsbox').value);if(!d||!Array.isArray(d.classes)||!Array.isArray(d.students))throw 0;
-    ['classes','students','tests'].forEach(k=>{const have=new Set(S[k].map(x=>x.id));(d[k]||[]).forEach(x=>{if(!have.has(x.id))S[k].push(x)})});
+    ['classes','students','tests','charges','pay','adj'].forEach(k=>{const have=new Set(S[k].map(x=>x.id));(d[k]||[]).forEach(x=>{if(!have.has(x.id))S[k].push(x)})});
+    (d.pay||[]).forEach(x=>{const y=S.pay.find(q=>q.id===x.id);if(y&&x.reversed&&!y.reversed){y.reversed=true;y.reason=x.reason}});
     for(const dt in (d.att||{}))S.att[dt]=Object.assign({},d.att[dt],S.att[dt]||{});
     for(const t in (d.marks||{}))S.marks[t]=Object.assign({},d.marks[t],S.marks[t]||{});
     save();toast('Backup merged')}catch(x){toast('That is not a valid backup');return}}
   else if(act==='restore'){try{const d=JSON.parse($('rsbox').value);if(!d||!Array.isArray(d.classes)||!Array.isArray(d.students))throw 0;
-    S=Object.assign({schools:S.schools,cur:S.cur,att:{},tests:[],marks:{}},d);save();toast('Backup restored')}catch(x){toast('That is not a valid backup');return}}
+    S=Object.assign({schools:S.schools,cur:S.cur,att:{},tests:[],marks:{},charges:[],pay:[],adj:[]},d);save();toast('Backup restored')}catch(x){toast('That is not a valid backup');return}}
   render();
 });
 document.addEventListener('change',e=>{
