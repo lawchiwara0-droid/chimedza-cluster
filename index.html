@@ -100,6 +100,7 @@ const activeIn=c=>S.students.filter(s=>s.classId===c&&!s.archived).sort((a,b)=>a
 const clsName=id=>(S.classes.find(c=>c.id===id)||{}).name||'';
 const schoolOf=id=>{const c=S.classes.find(x=>x.id===id),z=c&&S.schools.find(y=>y.id===c.schoolId);return z?z.name:''};
 const MC=()=>S.classes.filter(c=>c.schoolId===S.cur);
+const TC=()=>S.classes.find(c=>c.id===ui.cls)||{};
 const curSchool=()=>S.schools.find(z=>z.id===S.cur)||S.schools[0];
 const classOpts=()=>MC().map(c=>`<option value="${c.id}"${c.id===ui.cls?' selected':''}>${esc(c.name)}</option>`).join('');
 function stats(sid){let p=0,a=0,l=0;for(const d in S.att){const v=S.att[d][sid];if(v==='P')p++;else if(v==='A')a++;else if(v==='L')l++}return{p,a,l}}
@@ -128,6 +129,8 @@ function viewStudents(){
   <p class="hint">Use made-up names while you are testing.</p>
   <button class="btn" data-act="addstudents">Add learners</button></div>
   <div class="card"><h2>${esc(clsName(ui.cls))} (${list.length})</h2>
+  <div class="row2" style="margin:4px 0 8px"><input type="text" id="tname" value="${esc(TC().teacher||'')}" placeholder="Class teacher name" aria-label="Class teacher name"><input type="text" id="tec" value="${esc(TC().ec||'')}" placeholder="EC number" aria-label="EC number"></div>
+  <button class="ghost" data-act="saveteacher" style="margin-bottom:10px">Save teacher</button>
   ${list.length?`<ul class="rows" style="margin:0">${list.map(s=>`<li><span class="nm">${esc(s.name)}<small>${esc(s.sex||'')}</small></span><button class="ghost" data-act="archive" data-id="${s.id}">Archive</button></li>`).join('')}</ul><p class="hint">Archive hides a learner (transfer or withdrawal) but keeps their attendance history.</p>`:'<p class="hint">No learners in this class yet.</p>'}</div>`:''}`;
 }
 
@@ -178,7 +181,7 @@ function viewPrint(){
   return `<div class="bar np"><select data-bind="cls" aria-label="Class">${classOpts()}</select><input type="month" data-bind="month" value="${ui.month}" aria-label="Month"></div>
   <button class="btn np" data-act="print">Print register</button>
   <p class="hint np">Recorded P, A and L appear in the boxes. Empty boxes are for writing by hand. If Print does nothing, use your browser menu and choose Print or Share.</p>
-  <div class="pr"><h2>${esc(curSchool().name)} - Class register</h2><p>${esc(clsName(ui.cls))} &middot; ${mn} ${y} &middot; Teacher: ______________________</p>
+  <div class="pr"><h2>${esc(curSchool().name)} - Class register</h2><p>${esc(clsName(ui.cls))} &middot; ${mn} ${y} &middot; Teacher: ${TC().teacher?esc(TC().teacher):'______________________'} &middot; EC No: ${TC().ec?esc(TC().ec):'____________'}</p>
   <div class="tw"><table class="reg"><tr><th>Learner</th><th>Sex</th>${days.map(d=>`<th>${d}</th>`).join('')}</tr>${rows}</table></div>
   <p>P present, A absent, L late. School days (Mon-Fri) only.</p></div>`;
 }
@@ -240,6 +243,7 @@ document.addEventListener('click',e=>{
     lines.forEach(l=>{const p=l.split(',');const sx=(p[1]||'').trim().toUpperCase();S.students.push({id:uid(),name:p[0].trim(),sex:(sx==='M'||sx==='F')?sx:'',classId:ui.cls})});
     save();toast(lines.length+' added')}
   else if(act==='archive'){const s=S.students.find(x=>x.id===id);if(s){s.archived=true;save();toast('Archived')}}
+  else if(act==='saveteacher'){const c=S.classes.find(x=>x.id===ui.cls);if(c){c.teacher=$('tname').value.trim();c.ec=$('tec').value.trim().toUpperCase();save();toast('Teacher saved')}}
   else if(act==='addtest'){const nm=$('tn').value.trim(),sb=$('ts').value.trim(),mx=parseFloat($('tm').value),pp=parseFloat($('tp').value)||50;
     if(!nm||!sb||!(mx>0)){toast('Enter test name, subject and total marks');return}
     const t={id:uid(),classId:ui.cls,name:nm,subject:sb,max:mx,pass:pp,date:ui.date};S.tests.push(t);ui.test=t.id;save();toast('Test created')}
