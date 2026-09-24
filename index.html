@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f3d2e">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Chimedza Cluster Schools</title>
+<style>
+:root{--bg:#f4f2ea;--card:#fff;--ink:#16221c;--mute:#5b675f;--line:#d8d5c6;--brand:#0f3d2e;--on:#fff;--p:#1f7a4d;--a:#b3261e;--l:#a86d0a;--pbg:#dcf1e4;--abg:#f8dbd8;--lbg:#f8ebc9;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101a15;--card:#18261f;--ink:#e8efe9;--mute:#9db0a5;--line:#2c3f35;--brand:#2f7d5f;--p:#5fd394;--a:#ff8a80;--l:#f0b955;--pbg:#1d4a35;--abg:#5a2622;--lbg:#54401a}}
+:root[data-theme="dark"]{--bg:#101a15;--card:#18261f;--ink:#e8efe9;--mute:#9db0a5;--line:#2c3f35;--brand:#2f7d5f;--p:#5fd394;--a:#ff8a80;--l:#f0b955;--pbg:#1d4a35;--abg:#5a2622;--lbg:#54401a}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 Georgia,"Times New Roman",serif}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:640px;margin:0 auto;padding:0 14px 40px}
+header{background:var(--brand);color:var(--on);padding:16px 14px 12px;margin:0 -14px}
+header h1{margin:0;font-size:22px;letter-spacing:.2px}
+header p{margin:2px 0 0;font-size:14px;opacity:.85}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+nav button{flex:1;border:0;background:none;padding:8px 2px;font-size:12px;color:var(--mute);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button span{font-size:20px}
+nav button.on{color:var(--brand);font-weight:700;box-shadow:inset 0 3px 0 var(--brand)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{display:flex;flex-direction:column;align-items:center;gap:2px;padding:16px 8px;background:var(--card);border:1px solid var(--line);border-radius:12px;cursor:pointer;text-align:center}
+.tile span{font-size:30px}.tile small{color:var(--mute)}
+header{border-bottom:4px solid #d4a72c}
+header select{margin-top:10px;background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.4)}
+header option{color:#000}
+body{padding-bottom:84px}
+
+.bar{display:flex;gap:8px;margin:10px 0}
+.bar>*{flex:1;min-width:0}
+select,input[type=text],input[type=date],textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+textarea{min-height:110px;font:13px/1.4 ui-monospace,Menlo,monospace}
+.tally{font-size:14px;color:var(--mute);margin:6px 0 10px}
+.tally b{color:var(--ink)}
+.hint{font-size:13.5px;color:var(--mute);margin:8px 0}
+.ghost,.btn{padding:10px 14px;border-radius:8px;border:1px solid var(--brand);background:none;color:var(--brand);cursor:pointer}
+:root[data-theme="dark"] .ghost,:root[data-theme="dark"] .btn{color:var(--ink)}
+.btn{background:var(--brand);color:var(--on)}
+.rows{list-style:none;margin:10px 0;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.rows li{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line)}
+.rows li:last-child{border-bottom:0}
+.nm{flex:1;min-width:0}
+.nm small{color:var(--mute);margin-left:6px}
+.seg{display:flex;gap:6px}
+.seg button{width:44px;height:44px;border-radius:8px;border:1.5px solid var(--line);background:none;font-weight:700;cursor:pointer}
+.seg .P.on{background:var(--pbg);border-color:var(--p);color:var(--p)}
+.seg .A.on{background:var(--abg);border-color:var(--a);color:var(--a)}
+.seg .L.on{background:var(--lbg);border-color:var(--l);color:var(--l)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin:12px 0}
+.card h2{margin:0 0 8px;font-size:17px}
+.row2{display:flex;gap:8px}
+.row2>*{flex:1}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+.low{color:var(--a);font-weight:700}
+.empty{text-align:center;padding:30px 10px;color:var(--mute)}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:8px;font-size:14px;display:none}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--l);outline-offset:1px}
+.pr h2{font-size:17px;margin:14px 0 2px}.pr p{margin:2px 0 8px;font-size:14px}
+table.reg{font-size:11px}table.reg th,table.reg td{border:1px solid var(--line);padding:5px 3px;text-align:center}
+table.reg td:first-child,table.reg th:first-child{text-align:left;white-space:nowrap;padding-left:6px}
+.rows .mk{width:84px;flex:none;text-align:center}
+@page{size:landscape;margin:10mm}
+@media print{body{background:#fff;color:#000;padding-bottom:0}header,nav,.np,#toast{display:none!important}.wrap{max-width:none;padding:0}table.reg{font-size:10px}table.reg th,table.reg td{border-color:#000}.tw{overflow:visible}}
+</style>
+</head>
+<body>
+<div class="wrap"><header><h1>Chimedza Cluster Schools</h1><p>Zaka District &middot; works without internet</p><select id="sch" data-bind="school" aria-label="School"></select></header><div id="app"></div></div>
+<div id="toast" role="status"></div>
+<script>
+const KEY='chimedza_cluster_v1';
+const SEED=[
+{id:'CHI-PRI',name:'Chimedza Primary School',type:'PRIMARY',alias:''},
+{id:'CHI-SEC',name:'Chitonhora High School',type:'SECONDARY',alias:'Chimedza Secondary School'},
+{id:'ZIV-SEC',name:'Zivavose High School',type:'SECONDARY',alias:''},
+{id:'DAN-PRI',name:'Danda Primary School',type:'PRIMARY',alias:''},
+{id:'DAN-SEC',name:'Danda Secondary School',type:'SECONDARY',alias:''},
+{id:'CVT-PRI',name:'Chivata Primary School',type:'PRIMARY',alias:''},
+{id:'CVT-SEC',name:'Chivata Secondary School',type:'SECONDARY',alias:''},
+{id:'MUR-PRI',name:'Muroyi Primary School',type:'PRIMARY',alias:''},
+{id:'MUR-SEC',name:'Muroyi Secondary School',type:'SECONDARY',alias:''}];
+let S={schools:SEED,cur:'DAN-SEC',classes:[],students:[],att:{},tests:[],marks:{}};
+let ui={tab:'home',cls:'',date:today(),month:today().slice(0,7),test:''};
+const $=id=>document.getElementById(id);
+function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function uid(){return (window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now()+'-'+Math.random().toString(16).slice(2)}
+function esc(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function load(){try{const r=localStorage.getItem(KEY);if(r){const d=JSON.parse(r);if(d&&d.classes&&d.students)S=Object.assign(S,d)}}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Could not save on this browser. Copy a backup now.')}}
+function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display='none',2600)}
+const activeIn=c=>S.students.filter(s=>s.classId===c&&!s.archived).sort((a,b)=>a.name.localeCompare(b.name));
+const clsName=id=>(S.classes.find(c=>c.id===id)||{}).name||'';
+const schoolOf=id=>{const c=S.classes.find(x=>x.id===id),z=c&&S.schools.find(y=>y.id===c.schoolId);return z?z.name:''};
+const MC=()=>S.classes.filter(c=>c.schoolId===S.cur);
+const curSchool=()=>S.schools.find(z=>z.id===S.cur)||S.schools[0];
+const classOpts=()=>MC().map(c=>`<option value="${c.id}"${c.id===ui.cls?' selected':''}>${esc(c.name)}</option>`).join('');
+function stats(sid){let p=0,a=0,l=0;for(const d in S.att){const v=S.att[d][sid];if(v==='P')p++;else if(v==='A')a++;else if(v==='L')l++}return{p,a,l}}
+const pct=(p,l,a)=>(p+l+a)?Math.round((p+l)/(p+l+a)*100):null;
+
+function empty(msg){return `<div class="empty">${msg}<br><br><button class="btn" data-act="tab" data-v="students">Set up classes</button></div>`}
+
+function viewRegister(){
+  if(!MC().length||!activeIn(ui.cls).length)return empty('Add a class and some learners first.');
+  const list=activeIn(ui.cls),day=S.att[ui.date]||{};
+  let p=0,a=0,l=0;list.forEach(s=>{const v=day[s.id];if(v==='P')p++;else if(v==='A')a++;else if(v==='L')l++});
+  const un=list.length-p-a-l;
+  return `<div class="bar"><select data-bind="cls" aria-label="Class">${classOpts()}</select><input type="date" data-bind="date" value="${ui.date}" aria-label="Date"></div>
+  <div class="tally"><b>${p}</b> present &middot; <b>${a}</b> absent &middot; <b>${l}</b> late &middot; <b>${un}</b> not marked</div>
+  <button class="ghost" data-act="allp">Mark all unmarked as present</button>
+  <ul class="rows">${list.map(s=>`<li><span class="nm">${esc(s.name)}<small>${esc(s.sex||'')}</small></span><span class="seg">${['P','A','L'].map(v=>`<button class="${v}${day[s.id]===v?' on':''}" data-act="mark" data-id="${s.id}" data-v="${v}" aria-pressed="${day[s.id]===v}" aria-label="${{P:'Present',A:'Absent',L:'Late'}[v]} for ${esc(s.name)}">${v}</button>`).join('')}</span></li>`).join('')}</ul>
+  <p class="hint">P present, A absent, L late. Tap again to clear. A learner left unmarked is not counted as absent.</p>`;
+}
+
+function viewStudents(){
+  const list=activeIn(ui.cls);
+  return `<div class="card"><h2>Add a class</h2><div class="row2"><input type="text" id="newcls" placeholder="e.g. Form 1A" aria-label="Class name"><button class="btn" data-act="addclass" style="flex:0 0 auto">Add class</button></div></div>
+  ${MC().length?`<div class="card"><h2>Add learners</h2>
+  <select data-bind="cls" aria-label="Class" style="margin-bottom:8px">${classOpts()}</select>
+  <textarea id="newstu" placeholder="One learner per line. Add M or F after a comma:&#10;Tendai Moyo, F&#10;Farai Ncube, M"></textarea>
+  <p class="hint">Use made-up names while you are testing.</p>
+  <button class="btn" data-act="addstudents">Add learners</button></div>
+  <div class="card"><h2>${esc(clsName(ui.cls))} (${list.length})</h2>
+  ${list.length?`<ul class="rows" style="margin:0">${list.map(s=>`<li><span class="nm">${esc(s.name)}<small>${esc(s.sex||'')}</small></span><button class="ghost" data-act="archive" data-id="${s.id}">Archive</button></li>`).join('')}</ul><p class="hint">Archive hides a learner (transfer or withdrawal) but keeps their attendance history.</p>`:'<p class="hint">No learners in this class yet.</p>'}</div>`:''}`;
+}
+
+function viewSummary(){
+  if(!MC().length)return empty('Nothing to summarise yet.');
+  const list=activeIn(ui.cls);let P=0,A=0,L=0;
+  const rows=list.map(s=>{const t=stats(s.id);P+=t.p;A+=t.a;L+=t.l;const r=pct(t.p,t.l,t.a);return `<tr><td>${esc(s.name)}</td><td>${t.p}</td><td>${t.a}</td><td>${t.l}</td><td class="${r!==null&&r<80?'low':''}">${r===null?'-':r+'%'}</td></tr>`}).join('');
+  const cr=pct(P,L,A);
+  return `<div class="bar"><select data-bind="cls" aria-label="Class">${classOpts()}</select></div>
+  <div class="tally">Class attendance rate: <b>${cr===null?'no data yet':cr+'%'}</b></div>
+  <div class="tw"><table><tr><th>Learner</th><th>P</th><th>A</th><th>L</th><th>Rate</th></tr>${rows}</table></div>
+  <p class="hint">Rate = (present + late) &divide; days marked. Unmarked days are left out. Rates under 80% are in red.</p>`;
+}
+
+function csv(){
+  const q=v=>'"'+String(v).replace(/"/g,'""')+'"';const W={P:'Present',A:'Absent',L:'Late'};
+  const out=['date,school,class,learner,sex,status'];
+  Object.keys(S.att).sort().forEach(d=>{for(const id in S.att[d]){const s=S.students.find(x=>x.id===id);if(s)out.push([d,schoolOf(s.classId),clsName(s.classId),s.name,s.sex||'',W[S.att[d][id]]].map(q).join(','))}});
+  return out.join('\n');
+}
+
+function markStats(t){const m=S.marks[t.id]||{};const list=activeIn(t.classId);let n=0,a=0,sum=0,hi=null,lo=null,pass=0;
+  list.forEach(s=>{const v=m[s.id];if(v===undefined)return;if(v==='A'){a++;return}n++;sum+=v;hi=hi===null?v:Math.max(hi,v);lo=lo===null?v:Math.min(lo,v);if(v>=t.max*t.pass/100)pass++});
+  return `<b>${n}</b> marked &middot; <b>${a}</b> absent &middot; <b>${list.length-n-a}</b> missing`+(n?` &middot; average <b>${(sum/n).toFixed(1)}</b>/${t.max} &middot; high <b>${hi}</b> &middot; low <b>${lo}</b> &middot; pass rate <b>${Math.round(pass/n*100)}%</b> (pass mark ${t.pass}%)`:'')}
+
+function viewMarks(){
+  if(!MC().length||!activeIn(ui.cls).length)return empty('Add a class and some learners first.');
+  const ts=S.tests.filter(t=>t.classId===ui.cls);
+  if(!ts.find(t=>t.id===ui.test))ui.test=ts.length?ts[ts.length-1].id:'';
+  const t=ts.find(x=>x.id===ui.test),list=activeIn(ui.cls);
+  return `<div class="bar"><select data-bind="cls" aria-label="Class">${classOpts()}</select></div>
+  <div class="card"><h2>New test</h2>
+  <div class="row2" style="margin-bottom:8px"><input type="text" id="tn" placeholder="Test name, e.g. Term 3 Test 1" aria-label="Test name"><input type="text" id="ts" placeholder="Subject" aria-label="Subject"></div>
+  <div class="row2" style="margin-bottom:8px"><input type="text" id="tm" inputmode="numeric" placeholder="Out of, e.g. 50" aria-label="Out of"><input type="text" id="tp" inputmode="numeric" placeholder="Pass mark %, e.g. 50" aria-label="Pass mark percent"></div>
+  <button class="btn" data-act="addtest">Create test</button></div>
+  ${ts.length?`<select data-bind="test" aria-label="Test" style="margin-bottom:8px">${ts.map(x=>`<option value="${x.id}"${x.id===ui.test?' selected':''}>${esc(x.subject)} - ${esc(x.name)}</option>`).join('')}</select>`:'<p class="hint">Create a test to start entering marks.</p>'}
+  ${t?`<div class="tally" id="mstat">${markStats(t)}</div>
+  <ul class="rows">${list.map(s=>`<li><span class="nm">${esc(s.name)}</span><input type="text" class="mk" inputmode="decimal" data-mark="${s.id}" value="${(S.marks[t.id]||{})[s.id]??''}" placeholder="/${t.max}" aria-label="Mark for ${esc(s.name)}"></li>`).join('')}</ul>
+  <p class="hint">Type a mark out of ${t.max}, or A if the learner was absent. Leave blank if not yet marked. Blank is never counted as zero, and absent learners are left out of the average and pass rate.</p>`:''}`;
+}
+
+function viewPrint(){
+  if(!MC().length||!activeIn(ui.cls).length)return empty('Add a class and some learners first.');
+  const [y,m]=ui.month.split('-').map(Number),n=new Date(y,m,0).getDate(),days=[];
+  for(let d=1;d<=n;d++){const w=new Date(y,m-1,d).getDay();if(w>0&&w<6)days.push(d)}
+  const list=activeIn(ui.cls),mn=new Date(y,m-1,1).toLocaleString('en',{month:'long'});
+  const rows=list.map((s,i)=>`<tr><td>${i+1}. ${esc(s.name)}</td><td>${esc(s.sex||'')}</td>${days.map(d=>`<td>${((S.att[ui.month+'-'+String(d).padStart(2,'0')]||{})[s.id])||''}</td>`).join('')}</tr>`).join('');
+  return `<div class="bar np"><select data-bind="cls" aria-label="Class">${classOpts()}</select><input type="month" data-bind="month" value="${ui.month}" aria-label="Month"></div>
+  <button class="btn np" data-act="print">Print register</button>
+  <p class="hint np">Recorded P, A and L appear in the boxes. Empty boxes are for writing by hand. If Print does nothing, use your browser menu and choose Print or Share.</p>
+  <div class="pr"><h2>${esc(curSchool().name)} - Class register</h2><p>${esc(clsName(ui.cls))} &middot; ${mn} ${y} &middot; Teacher: ______________________</p>
+  <div class="tw"><table class="reg"><tr><th>Learner</th><th>Sex</th>${days.map(d=>`<th>${d}</th>`).join('')}</tr>${rows}</table></div>
+  <p>P present, A absent, L late. School days (Mon-Fri) only.</p></div>`;
+}
+
+function marksCsv(){
+  const q=v=>'"'+String(v).replace(/"/g,'""')+'"',out=['school,class,subject,test,learner,mark,out_of'];
+  S.tests.forEach(t=>{const m=S.marks[t.id]||{};for(const id in m){const s=S.students.find(x=>x.id===id);if(s)out.push([schoolOf(t.classId),clsName(t.classId),t.subject,t.name,s.name,m[id]==='A'?'Absent':m[id],t.max].map(q).join(','))}});
+  return out.join('\n');
+}
+
+function viewHome(){
+  const sc=curSchool(),cs=MC(),ss=S.students.filter(x=>!x.archived&&cs.some(c=>c.id===x.classId)),tk=S.att[today()]||{};
+  let p=0,a=0,l=0;ss.forEach(x=>{const v=tk[x.id];if(v==='P')p++;else if(v==='A')a++;else if(v==='L')l++});
+  const tile=(t,i,n,d)=>`<button class="tile" data-act="tab" data-v="${t}"><span>${i}</span><b>${n}</b><small>${d}</small></button>`;
+  return `<div class="card"><h2>${esc(sc.name)}</h2><p class="hint" style="margin:0">${sc.type==='PRIMARY'?'Primary':'Secondary'} school${sc.alias?' &middot; also called '+esc(sc.alias):''}</p>
+  <div class="tally" style="margin:8px 0 0"><b>${ss.length}</b> learners &middot; <b>${cs.length}</b> classes &middot; today <b>${p}</b> present, <b>${a}</b> absent, <b>${l}</b> late</div></div>
+  <div class="grid">${tile('register','\u{1F4CB}','Register','Daily attendance')}${tile('marks','\u{1F4DD}','Marks','Tests and results')}${tile('students','\u{1F465}','Learners','Classes and names')}${tile('summary','\u{1F4CA}','Summary','Attendance rates')}${tile('print','\u{1F5A8}\uFE0F','Print','Paper register')}${tile('cluster','\u{1F3EB}','Cluster','All nine schools')}${tile('backup','\u{1F4BE}','Backup','Export and merge')}</div>`;
+}
+
+function viewCluster(){
+  let TL=0,TP=0,TA=0,TLt=0;
+  const rows=S.schools.map(sc=>{const cs=S.classes.filter(c=>c.schoolId===sc.id),ss=S.students.filter(x=>!x.archived&&cs.some(c=>c.id===x.classId));
+    let P=0,A=0,L=0;ss.forEach(x=>{const t=stats(x.id);P+=t.p;A+=t.a;L+=t.l});TL+=ss.length;TP+=P;TA+=A;TLt+=L;const r=pct(P,L,A);
+    return `<tr><td>${esc(sc.name.replace(' School',''))}</td><td>${ss.length}</td><td>${r===null?'-':r+'%'}</td></tr>`}).join('');
+  const cr=pct(TP,TLt,TA);
+  return `<h2 style="font-size:18px;margin:6px 0">Cluster overview</h2><div class="tw"><table><tr><th>School</th><th>Learners</th><th>Attendance</th></tr>${rows}<tr><th>Cluster</th><th>${TL}</th><th>${cr===null?'-':cr+'%'}</th></tr></table></div>
+  <p class="hint">This shows only data stored on this device. To combine schools, copy each school's backup and use Merge in the Backup tab.</p>`;
+}
+
+function viewBackup(){
+  return `
+  <div class="card"><h2>Attendance spreadsheet (CSV)</h2><textarea id="csvbox" readonly>${esc(csv())}</textarea>
+  <p class="hint">Copy this and paste it into Excel, Google Sheets or WhatsApp.</p><button class="btn" data-act="copy" data-v="csvbox">Copy CSV</button></div>
+  <div class="card"><h2>Marks spreadsheet (CSV)</h2><textarea id="csvbox2" readonly>${esc(marksCsv())}</textarea>
+  <p class="hint">Blank marks are left out, not written as zero.</p><button class="btn" data-act="copy" data-v="csvbox2">Copy marks CSV</button></div>
+  <div class="card"><h2>Full backup</h2><textarea id="bkbox" readonly>${esc(JSON.stringify(S))}</textarea>
+  <p class="hint">Data lives on this device only. Copy a backup after each week and keep it somewhere safe.</p><button class="btn" data-act="copy" data-v="bkbox">Copy backup</button></div>
+  <div class="card"><h2>Merge or restore a backup</h2><textarea id="rsbox" placeholder="Paste a backup here"></textarea>
+  <p class="hint"><b>Merge</b> adds another school's records to this device and keeps yours. <b>Replace</b> wipes this device and uses the backup.</p><button class="btn" data-act="merge">Merge backup</button> <button class="ghost" data-act="restore">Replace with backup</button></div>`;
+}
+
+function render(){
+  {const m=MC();if(!m.length)ui.cls='';else if(!m.find(c=>c.id===ui.cls))ui.cls=m[0].id}
+  $('sch').innerHTML=S.schools.map(z=>`<option value="${z.id}"${z.id===S.cur?' selected':''}>${esc(z.name)}</option>`).join('');
+  const T=[['home','🏠','Home'],['register','📋','Register'],['marks','📝','Marks'],['students','👥','Learners']];
+  $('app').innerHTML=`<nav>${T.map(t=>`<button class="${ui.tab===t[0]?'on':''}" data-act="tab" data-v="${t[0]}"><span>${t[1]}</span>${t[2]}</button>`).join('')}</nav>`+({home:viewHome,cluster:viewCluster,register:viewRegister,students:viewStudents,marks:viewMarks,summary:viewSummary,print:viewPrint,backup:viewBackup}[ui.tab])();
+}
+
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const act=b.dataset.act,v=b.dataset.v,id=b.dataset.id;
+  if(act==='tab'){ui.tab=v}
+  else if(act==='mark'){const d=S.att[ui.date]=S.att[ui.date]||{};if(d[id]===v)delete d[id];else d[id]=v;save()}
+  else if(act==='allp'){const d=S.att[ui.date]=S.att[ui.date]||{};activeIn(ui.cls).forEach(s=>{if(!d[s.id])d[s.id]='P'});save()}
+  else if(act==='addclass'){const n=$('newcls').value.trim();if(!n){toast('Type a class name first');return}
+    const c={id:uid(),name:n,schoolId:S.cur};S.classes.push(c);ui.cls=c.id;save();toast('Class added')}
+  else if(act==='addstudents'){const lines=$('newstu').value.split('\n').map(x=>x.trim()).filter(Boolean);
+    if(!lines.length){toast('Type at least one name');return}
+    lines.forEach(l=>{const p=l.split(',');const sx=(p[1]||'').trim().toUpperCase();S.students.push({id:uid(),name:p[0].trim(),sex:(sx==='M'||sx==='F')?sx:'',classId:ui.cls})});
+    save();toast(lines.length+' added')}
+  else if(act==='archive'){const s=S.students.find(x=>x.id===id);if(s){s.archived=true;save();toast('Archived')}}
+  else if(act==='addtest'){const nm=$('tn').value.trim(),sb=$('ts').value.trim(),mx=parseFloat($('tm').value),pp=parseFloat($('tp').value)||50;
+    if(!nm||!sb||!(mx>0)){toast('Enter test name, subject and total marks');return}
+    const t={id:uid(),classId:ui.cls,name:nm,subject:sb,max:mx,pass:pp,date:ui.date};S.tests.push(t);ui.test=t.id;save();toast('Test created')}
+  else if(act==='print'){try{window.print()}catch(x){toast('Use your browser menu to print')}return}
+  else if(act==='copy'){const t=$(v);t.select();let ok=false;try{ok=document.execCommand('copy')}catch(x){}
+    if(navigator.clipboard){navigator.clipboard.writeText(t.value).then(()=>toast('Copied'),()=>toast(ok?'Copied':'Press and hold to copy'))}else toast(ok?'Copied':'Press and hold to copy');return}
+  else if(act==='merge'){try{const d=JSON.parse($('rsbox').value);if(!d||!Array.isArray(d.classes)||!Array.isArray(d.students))throw 0;
+    ['classes','students','tests'].forEach(k=>{const have=new Set(S[k].map(x=>x.id));(d[k]||[]).forEach(x=>{if(!have.has(x.id))S[k].push(x)})});
+    for(const dt in (d.att||{}))S.att[dt]=Object.assign({},d.att[dt],S.att[dt]||{});
+    for(const t in (d.marks||{}))S.marks[t]=Object.assign({},d.marks[t],S.marks[t]||{});
+    save();toast('Backup merged')}catch(x){toast('That is not a valid backup');return}}
+  else if(act==='restore'){try{const d=JSON.parse($('rsbox').value);if(!d||!Array.isArray(d.classes)||!Array.isArray(d.students))throw 0;
+    S=Object.assign({schools:S.schools,cur:S.cur,att:{},tests:[],marks:{}},d);save();toast('Backup restored')}catch(x){toast('That is not a valid backup');return}}
+  render();
+});
+document.addEventListener('change',e=>{
+  if(e.target.dataset.mark){const t=S.tests.find(x=>x.id===ui.test);if(!t)return;
+    const id=e.target.dataset.mark,m=S.marks[t.id]=S.marks[t.id]||{};let v=e.target.value.trim().toUpperCase();
+    if(v==='')delete m[id];else if(v==='A')m[id]='A';
+    else{const n=parseFloat(v.replace(',','.'));if(isNaN(n)||n<0||n>t.max){toast('Enter 0 to '+t.max+', or A for absent');e.target.value=m[id]??'';return}m[id]=n;e.target.value=n}
+    save();$('mstat').innerHTML=markStats(t);return}
+  const k=e.target.dataset.bind;if(!k)return;
+  if(k==='school'){S.cur=e.target.value;ui.cls='';ui.test='';save();render();return}
+  ui[k]=e.target.value;render();
+});
+load();render();
+if('serviceWorker' in navigator&&location.protocol==='https:'){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}
+</script>
+</body>
+</html>
