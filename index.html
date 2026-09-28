@@ -73,7 +73,7 @@ table.reg td:first-child,table.reg th:first-child{text-align:left;white-space:no
 </style>
 </head>
 <body>
-<div class="wrap"><header><h1>Chimedza Cluster Schools</h1><p>Zaka District &middot; works without internet</p><select id="sch" data-bind="school" aria-label="School"></select></header><div id="app"></div></div>
+<div class="wrap"><header><h1>Chimedza Cluster Schools</h1><p>Zaka District &middot; <span id="offl">checking offline mode...</span></p><select id="sch" data-bind="school" aria-label="School"></select></header><div id="app"></div></div>
 <div id="toast" role="status"></div>
 <script>
 const KEY='chimedza_cluster_v1';
@@ -87,13 +87,13 @@ const SEED=[
 {id:'CVT-SEC',name:'Chivata Secondary School',type:'SECONDARY',alias:''},
 {id:'MUR-PRI',name:'Muroyi Primary School',type:'PRIMARY',alias:''},
 {id:'MUR-SEC',name:'Muroyi Secondary School',type:'SECONDARY',alias:''}];
-let S={schools:SEED,cur:'DAN-SEC',classes:[],students:[],att:{},tests:[],marks:{},charges:[],pay:[],adj:[]};
-let ui={tab:'home',cls:'',date:today(),month:today().slice(0,7),test:'',stu:'',rcpt:''};
+let S={schools:SEED,cur:'DAN-SEC',classes:[],students:[],att:{},tests:[],marks:{},charges:[],pay:[],adj:[],hbc:[],conduct:[],security:{staffPin:'0000',adminPin:'1234'}};
+let ui={tab:'home',cls:'',date:today(),month:today().slice(0,7),test:'',stu:'',rcpt:'',hbc:'',con:'',lock:'staff',lockErr:''};
 const $=id=>document.getElementById(id);
 function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function uid(){return (window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now()+'-'+Math.random().toString(16).slice(2)}
 function esc(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function load(){try{const r=localStorage.getItem(KEY);if(r){const d=JSON.parse(r);if(d&&d.classes&&d.students)S=Object.assign(S,d)}}catch(e){}}
+function load(){try{const r=localStorage.getItem(KEY);if(r){const d=JSON.parse(r);if(d&&d.classes&&d.students)S=Object.assign(S,d)}}catch(e){}if(!S.security)S.security={staffPin:'0000',adminPin:'1234'}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Could not save on this browser. Copy a backup now.')}}
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display='none',2600)}
 const activeIn=c=>S.students.filter(s=>s.classId===c&&!s.archived).sort((a,b)=>a.name.localeCompare(b.name));
@@ -192,13 +192,30 @@ function marksCsv(){
   return out.join('\n');
 }
 
+function isAdmin(){return sessionStorage.getItem('cc_role')==='admin'}
+function isStaff(){return !!sessionStorage.getItem('cc_role')}
+function needAdmin(after){if(isAdmin()){after();return}
+  const p=prompt('Enter the administrator PIN');if(p===null)return;
+  if(p===S.security.adminPin){sessionStorage.setItem('cc_role','admin');after()}else toast('Wrong PIN')}
+
+function viewLock(){
+  return `<div class="card" style="max-width:340px;margin:60px auto 0;text-align:center">
+  <h2>${ui.lock==='staff'?'Staff sign in':'Administrator PIN'}</h2>
+  <p class="hint">${ui.lock==='staff'?'Enter the staff PIN for this device.':'Needed for fees, backup and reversing entries.'}</p>
+  <input type="text" id="pk" inputmode="numeric" placeholder="PIN" style="text-align:center;font-size:22px;letter-spacing:4px" aria-label="PIN">
+  ${ui.lockErr?`<p class="hint low">${esc(ui.lockErr)}</p>`:''}
+  <button class="btn" data-act="unlock" style="margin-top:10px;width:100%">Continue</button>
+  <p class="hint" style="margin-top:14px">Default PIN is 0000 (staff) or 1234 (admin) until changed in Backup &rarr; Access.</p>
+  </div>`;
+}
+
 function viewHome(){
   const sc=curSchool(),cs=MC(),ss=S.students.filter(x=>!x.archived&&cs.some(c=>c.id===x.classId)),tk=S.att[today()]||{};
   let p=0,a=0,l=0;ss.forEach(x=>{const v=tk[x.id];if(v==='P')p++;else if(v==='A')a++;else if(v==='L')l++});
   const tile=(t,i,n,d)=>`<button class="tile" data-act="tab" data-v="${t}"><span>${i}</span><b>${n}</b><small>${d}</small></button>`;
   return `<div class="card"><h2>${esc(sc.name)}</h2><p class="hint" style="margin:0">${sc.type==='PRIMARY'?'Primary':'Secondary'} school${sc.alias?' &middot; also called '+esc(sc.alias):''}</p>
   <div class="tally" style="margin:8px 0 0"><b>${ss.length}</b> learners &middot; <b>${cs.length}</b> classes &middot; today <b>${p}</b> present, <b>${a}</b> absent, <b>${l}</b> late</div></div>
-  <div class="grid">${tile('register','\u{1F4CB}','Register','Daily attendance')}${tile('marks','\u{1F4DD}','Marks','Tests and results')}${tile('students','\u{1F465}','Learners','Classes and names')}${tile('summary','\u{1F4CA}','Summary','Attendance rates')}${tile('print','\u{1F5A8}\uFE0F','Print','Paper register')}${tile('fees','\u{1F4B5}','Fees','Charges and payments')}${tile('cluster','\u{1F3EB}','Cluster','All nine schools')}${tile('backup','\u{1F4BE}','Backup','Export and merge')}</div>`;
+  <div class="grid">${tile('register','\u{1F4CB}','Register','Daily attendance')}${tile('marks','\u{1F4DD}','Marks','Tests and results')}${tile('students','\u{1F465}','Learners','Classes and names')}${tile('summary','\u{1F4CA}','Summary','Attendance rates')}${tile('print','\u{1F5A8}\uFE0F','Print','Paper register')}${tile('hbc','🎓','HBC Projects','Heritage-Based Curriculum')}${tile('conduct','📓','Conduct','Behaviour records')}${tile('fees','\u{1F4B5}','Fees','Charges and payments')}${tile('cluster','\u{1F3EB}','Cluster','All nine schools')}${tile('backup','\u{1F4BE}','Backup','Export and merge')}</div>`;
 }
 
 function viewCluster(){
@@ -267,6 +284,43 @@ function payCsv(){
   return out.join('\n');
 }
 
+const HBC_STAGES=['Planned','In progress','Submitted','Assessed'];
+
+function viewHbc(){
+  if(!MC().length)return empty('Add a class first.');
+  const list=S.hbc.filter(h=>MC().some(c=>c.id===h.classId));
+  return `<div class="card"><h2>New HBC project</h2>
+  <div class="row2" style="margin-bottom:8px"><select data-bind="cls" aria-label="Class">${classOpts()}</select><input type="text" id="hsub" placeholder="Subject" aria-label="Subject"></div>
+  <input type="text" id="htitle" placeholder="Project title" style="margin-bottom:8px" aria-label="Project title">
+  <textarea id="hdesc" placeholder="What learners must do, and how it connects to their heritage or community" style="min-height:80px;margin-bottom:8px"></textarea>
+  <input type="date" id="hdue" style="margin-bottom:8px" aria-label="Due date">
+  <button class="btn" data-act="addhbc">Add project</button></div>
+  ${list.length?list.map(h=>`<div class="card"><h2 style="font-size:16px">${esc(h.title)} <small style="font-weight:400;color:var(--mute)">&middot; ${esc(clsName(h.classId))} &middot; ${esc(h.subject)}</small></h2>
+  <p class="hint" style="margin:0 0 8px">${esc(h.description||'')}${h.due?' &middot; due '+h.due:''}</p>
+  <select data-act2="hbcstage" data-id="${h.id}" aria-label="Stage">${HBC_STAGES.map(x=>`<option${x===h.stage?' selected':''}>${x}</option>`).join('')}</select>
+  <button class="ghost" data-act="delhbc" data-id="${h.id}" style="margin-left:6px">Remove</button></div>`).join(''):'<p class="hint">No HBC projects logged for this school yet.</p>'}
+  <p class="hint">Heritage-Based Curriculum continuous assessment projects, tracked by stage from planning to marking.</p>`;
+}
+
+const CON_CATS=['Late coming','Uniform','Classroom conduct','Absconding','Bullying or aggression','Property damage','Other'];
+
+function viewConduct(){
+  if(!MC().length||!activeIn(ui.cls).length)return empty('Add a class and some learners first.');
+  const list=activeIn(ui.cls),cur=list.find(s=>s.id===ui.con);
+  const recs=id=>S.conduct.filter(c=>c.studentId===id).sort((a,b)=>b.date.localeCompare(a.date));
+  return `<div class="bar"><select data-bind="cls" aria-label="Class">${classOpts()}</select></div>
+  <ul class="rows">${list.map(s=>{const n=recs(s.id).length;return `<li><span class="nm">${esc(s.name)}${n?` <small>${n} record${n>1?'s':''}</small>`:''}</span><button class="ghost" data-act="con" data-id="${s.id}">${cur&&cur.id===s.id?'Close':'Open'}</button></li>`}).join('')}</ul>
+  ${cur?`<div class="card"><h2>${esc(cur.name)}</h2>
+  <div class="row2" style="margin-bottom:8px"><input type="date" id="cd" value="${today()}" aria-label="Date"><select id="cc" aria-label="Category">${CON_CATS.map(x=>`<option>${x}</option>`).join('')}</select></div>
+  <textarea id="cdesc" placeholder="What happened, factually" style="min-height:70px;margin-bottom:8px"></textarea>
+  <input type="text" id="cact" placeholder="Action taken, e.g. spoken to, guardian informed" style="margin-bottom:8px">
+  <button class="btn" data-act="addcon">Save record</button>
+  <h2 style="font-size:15px;margin:14px 0 6px">History</h2>
+  ${recs(cur.id).length?recs(cur.id).map(r=>`<p class="hint" style="margin:6px 0">${r.date} &middot; <b>${esc(r.category)}</b> &middot; ${esc(r.description)}${r.action?' &middot; Action: '+esc(r.action):''}</p>`).join(''):'<p class="hint">No records for this learner.</p>'}
+  </div>`:''}
+  <p class="hint">Keep entries factual and specific to what happened. Use this to support the learner, not to label them.</p>`;
+}
+
 function viewBackup(){
   return `
   <div class="card"><h2>Attendance spreadsheet (CSV)</h2><textarea id="csvbox" readonly>${esc(csv())}</textarea>
@@ -277,20 +331,33 @@ function viewBackup(){
   <p class="hint">Blank marks are left out, not written as zero.</p><button class="btn" data-act="copy" data-v="csvbox2">Copy marks CSV</button></div>
   <div class="card"><h2>Full backup</h2><textarea id="bkbox" readonly>${esc(JSON.stringify(S))}</textarea>
   <p class="hint">Data lives on this device only. Copy a backup after each week and keep it somewhere safe.</p><button class="btn" data-act="copy" data-v="bkbox">Copy backup</button></div>
+  <div class="card"><h2>Access PINs (administrator)</h2>
+  <p class="hint">The staff PIN opens the app. The administrator PIN is also needed for Fees, Backup and reversing entries.</p>
+  <div class="row2" style="margin-bottom:8px"><input type="text" id="npin1" inputmode="numeric" placeholder="New staff PIN" aria-label="New staff PIN"><input type="text" id="npin2" inputmode="numeric" placeholder="New admin PIN" aria-label="New admin PIN"></div>
+  <button class="ghost" data-act="setpins">Save PINs</button></div>
   <div class="card"><h2>Merge or restore a backup</h2><textarea id="rsbox" placeholder="Paste a backup here"></textarea>
   <p class="hint"><b>Merge</b> adds another school's records to this device and keeps yours. <b>Replace</b> wipes this device and uses the backup.</p><button class="btn" data-act="merge">Merge backup</button> <button class="ghost" data-act="restore">Replace with backup</button></div>`;
 }
 
 function render(){
+  if(!isStaff()){$('app').innerHTML=viewLock();return}
+  if((ui.tab==='fees'||ui.tab==='backup')&&!isAdmin()){ui.lock='admin';$('app').innerHTML=viewLock();return}
   {const m=MC();if(!m.length)ui.cls='';else if(!m.find(c=>c.id===ui.cls))ui.cls=m[0].id}
   $('sch').innerHTML=S.schools.map(z=>`<option value="${z.id}"${z.id===S.cur?' selected':''}>${esc(z.name)}</option>`).join('');
   const T=[['home','🏠','Home'],['register','📋','Register'],['marks','📝','Marks'],['students','👥','Learners']];
-  $('app').innerHTML=`<nav>${T.map(t=>`<button class="${ui.tab===t[0]?'on':''}" data-act="tab" data-v="${t[0]}"><span>${t[1]}</span>${t[2]}</button>`).join('')}</nav>`+({home:viewHome,cluster:viewCluster,fees:viewFees,receipt:viewReceipt,register:viewRegister,students:viewStudents,marks:viewMarks,summary:viewSummary,print:viewPrint,backup:viewBackup}[ui.tab])();
+  $('app').innerHTML=`<nav>${T.map(t=>`<button class="${ui.tab===t[0]?'on':''}" data-act="tab" data-v="${t[0]}"><span>${t[1]}</span>${t[2]}</button>`).join('')}</nav>`+({home:viewHome,cluster:viewCluster,fees:viewFees,receipt:viewReceipt,hbc:viewHbc,conduct:viewConduct,register:viewRegister,students:viewStudents,marks:viewMarks,summary:viewSummary,print:viewPrint,backup:viewBackup}[ui.tab])();
 }
 
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b)return;
   const act=b.dataset.act,v=b.dataset.v,id=b.dataset.id;
+  if(act==='unlock'){const p=($('pk').value||'').trim();
+    if(ui.lock==='staff'){if(p===S.security.staffPin||p===S.security.adminPin){sessionStorage.setItem('cc_role',p===S.security.adminPin?'admin':'staff');ui.lockErr=''}else{ui.lockErr='Wrong PIN, try again';render();return}}
+    else{if(p===S.security.adminPin){sessionStorage.setItem('cc_role','admin');ui.lockErr=''}else{ui.lockErr='Wrong PIN, try again';render();return}}
+    render();return}
+  if(act==='setpins'){needAdmin(()=>{const a=$('npin1').value.trim(),b2=$('npin2').value.trim();
+    if(a)S.security.staffPin=a;if(b2)S.security.adminPin=b2;save();toast('PINs updated')});return}
+  if(act==='cancelch'||act==='rev'){needAdmin(()=>{doAct(act,id,v)});return}
   if(act==='tab'){ui.tab=v}
   else if(act==='mark'){const d=S.att[ui.date]=S.att[ui.date]||{};if(d[id]===v)delete d[id];else d[id]=v;save()}
   else if(act==='allp'){const d=S.att[ui.date]=S.att[ui.date]||{};activeIn(ui.cls).forEach(s=>{if(!d[s.id])d[s.id]='P'});save()}
@@ -302,17 +369,24 @@ document.addEventListener('click',e=>{
     save();toast(lines.length+' added')}
   else if(act==='archive'){const s=S.students.find(x=>x.id===id);if(s){s.archived=true;save();toast('Archived')}}
   else if(act==='saveteacher'){const c=S.classes.find(x=>x.id===ui.cls);if(c){c.teacher=$('tname').value.trim();c.ec=$('tec').value.trim().toUpperCase();save();toast('Teacher saved')}}
+  else if(act==='addhbc'){const sub=$('hsub').value.trim(),tt=$('htitle').value.trim(),ds=$('hdesc').value.trim(),du=$('hdue').value;
+    if(!sub||!tt){toast('Enter a subject and title');return}
+    S.hbc.push({id:uid(),classId:ui.cls,subject:sub,title:tt,description:ds,due:du,stage:'Planned'});save();toast('Project added')}
+  else if(act==='delhbc'){S.hbc=S.hbc.filter(h=>h.id!==id);save();toast('Removed')}
+  else if(act==='con'){ui.con=ui.con===id?'':id}
+  else if(act==='addcon'){const d=$('cd').value||today(),c=$('cc').value,ds=$('cdesc').value.trim(),ac=$('cact').value.trim();
+    if(!ds){toast('Describe what happened');return}
+    S.conduct.push({id:uid(),studentId:ui.con,date:d,category:c,description:ds,action:ac});save();toast('Record saved')}
   else if(act==='stu'){ui.stu=ui.stu===id?'':id}
   else if(act==='rcpt'){ui.rcpt=id;ui.tab='receipt'}
   else if(act==='addcharge'){const n=$('cn').value.trim(),a=parseFloat($('ca').value),w=$('cw').value;
     if(!n||!(a>0)){toast('Enter a charge name and USD amount');return}
     S.charges.push({id:uid(),schoolId:S.cur,classId:w==='all'?'':w,name:n,amount:a,date:today()});save();toast('Charge added')}
-  else if(act==='cancelch'){const h=S.charges.find(x=>x.id===id);if(h){h.cancelled=true;save();toast('Charge cancelled')}}
+
   else if(act==='waive'){const a=parseFloat($('wa').value),r=$('wr').value.trim();
     if(!(a>0)||!r){toast('Enter an amount and a reason');return}
     S.adj.push({id:uid(),studentId:ui.stu,amount:a,reason:r,date:today()});save();toast('Waiver saved')}
-  else if(act==='rev'){const r=$('rv').value.trim();if(!r){toast('Type the reason first');return}
-    const p=S.pay.find(x=>x.id===id);if(p&&!p.reversed){p.reversed=true;p.reason=r;p.revDate=today();save();toast('Payment reversed')}}
+
   else if(act==='pay'){const s=S.students.find(x=>x.id===ui.stu),a=parseFloat($('pa').value),cur=$('pc').value,rt=parseFloat($('pr').value);
     if(!s||!(a>0)){toast('Enter the amount paid');return}
     if(cur==='ZiG'&&!(rt>0)){toast('Enter the ZiG rate for 1 USD');return}
@@ -326,16 +400,23 @@ document.addEventListener('click',e=>{
   else if(act==='copy'){const t=$(v);t.select();let ok=false;try{ok=document.execCommand('copy')}catch(x){}
     if(navigator.clipboard){navigator.clipboard.writeText(t.value).then(()=>toast('Copied'),()=>toast(ok?'Copied':'Press and hold to copy'))}else toast(ok?'Copied':'Press and hold to copy');return}
   else if(act==='merge'){try{const d=JSON.parse($('rsbox').value);if(!d||!Array.isArray(d.classes)||!Array.isArray(d.students))throw 0;
-    ['classes','students','tests','charges','pay','adj'].forEach(k=>{const have=new Set(S[k].map(x=>x.id));(d[k]||[]).forEach(x=>{if(!have.has(x.id))S[k].push(x)})});
+    ['classes','students','tests','charges','pay','adj','hbc','conduct'].forEach(k=>{const have=new Set(S[k].map(x=>x.id));(d[k]||[]).forEach(x=>{if(!have.has(x.id))S[k].push(x)})});
     (d.pay||[]).forEach(x=>{const y=S.pay.find(q=>q.id===x.id);if(y&&x.reversed&&!y.reversed){y.reversed=true;y.reason=x.reason}});
     for(const dt in (d.att||{}))S.att[dt]=Object.assign({},d.att[dt],S.att[dt]||{});
     for(const t in (d.marks||{}))S.marks[t]=Object.assign({},d.marks[t],S.marks[t]||{});
     save();toast('Backup merged')}catch(x){toast('That is not a valid backup');return}}
   else if(act==='restore'){try{const d=JSON.parse($('rsbox').value);if(!d||!Array.isArray(d.classes)||!Array.isArray(d.students))throw 0;
-    S=Object.assign({schools:S.schools,cur:S.cur,att:{},tests:[],marks:{},charges:[],pay:[],adj:[]},d);save();toast('Backup restored')}catch(x){toast('That is not a valid backup');return}}
+    S=Object.assign({schools:S.schools,cur:S.cur,att:{},tests:[],marks:{},charges:[],pay:[],adj:[],hbc:[],conduct:[],security:{staffPin:'0000',adminPin:'1234'}},d);save();toast('Backup restored')}catch(x){toast('That is not a valid backup');return}}
   render();
 });
+function doAct(act,id,v){
+  if(act==='cancelch'){const h=S.charges.find(x=>x.id===id);if(h){h.cancelled=true;save();toast('Charge cancelled')}}
+  else if(act==='rev'){const r=($('rv')&&$('rv').value||'').trim();if(!r){toast('Type the reason first');return}
+    const p=S.pay.find(x=>x.id===id);if(p&&!p.reversed){p.reversed=true;p.reason=r;p.revDate=today();save();toast('Payment reversed')}}
+  render();
+}
 document.addEventListener('change',e=>{
+  if(e.target.dataset.act2==='hbcstage'){const h=S.hbc.find(x=>x.id===e.target.dataset.id);if(h){h.stage=e.target.value;save();toast('Stage updated')}return}
   if(e.target.dataset.mark){const t=S.tests.find(x=>x.id===ui.test);if(!t)return;
     const id=e.target.dataset.mark,m=S.marks[t.id]=S.marks[t.id]||{};let v=e.target.value.trim().toUpperCase();
     if(v==='')delete m[id];else if(v==='A')m[id]='A';
@@ -346,7 +427,12 @@ document.addEventListener('change',e=>{
   ui[k]=e.target.value;render();
 });
 load();render();
-if('serviceWorker' in navigator&&location.protocol==='https:'){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}
+function offStatus(){const el=$('offl');if(!el)return;
+  if(!('serviceWorker' in navigator)||location.protocol!=='https:'){el.textContent='offline saving not available here';return}
+  caches.match('index.html').then(h=>{el.textContent=(h?'\u2713 ready for offline use':'not saved for offline yet, stay online a moment')+(navigator.onLine?'':' \u00b7 you are offline')}).catch(()=>{el.textContent='offline status unknown'})}
+if('serviceWorker' in navigator&&location.protocol==='https:'){
+  navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready).then(()=>setTimeout(offStatus,1500)).catch(()=>offStatus())}
+addEventListener('online',offStatus);addEventListener('offline',offStatus);setTimeout(offStatus,800);
 </script>
 </body>
 </html>
