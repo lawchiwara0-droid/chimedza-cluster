@@ -243,7 +243,7 @@ function ledger(s){
   <button class="ghost" data-act="waive">Save waiver</button>
   <h2 style="font-size:15px;margin:14px 0 6px">History</h2>
   ${ps.length+ws.length?'':'<p class="hint">Nothing recorded yet.</p>'}
-  ${ps.map(p=>`<p class="hint" style="margin:6px 0">${p.date} &middot; ${p.receipt} &middot; ${fm(p.usd)}${p.reversed?'<b class="low">reversed: '+esc(p.reason||'')+'</b>':`<button class="ghost" data-act="rev" data-id="${p.id}">Reverse</button> <button class="ghost" data-act="rcpt" data-id="${p.id}">Receipt</button>`}</p>`).join('')}
+  ${ps.map(p=>`<p class="hint" style="margin:6px 0">${p.date} &middot; ${p.receipt} &middot; ${fm(p.usd)} ${p.reversed?'<b class="low">reversed: '+esc(p.reason||'')+'</b>':`<button class="ghost" data-act="rev" data-id="${p.id}">Reverse</button> <button class="ghost" data-act="rcpt" data-id="${p.id}">Receipt</button>`}</p>`).join('')}
   ${ws.map(a=>`<p class="hint" style="margin:6px 0">${a.date} &middot; waived ${fm(a.amount)} &middot; ${esc(a.reason)}</p>`).join('')}
   <input type="text" id="rv" placeholder="Reason, only needed to reverse a payment" aria-label="Reversal reason" style="margin-top:8px">
   <p class="hint">Payments are never deleted. A mistake is reversed with a reason.</p></div>`;
@@ -296,7 +296,7 @@ function viewHbc(){
   <input type="date" id="hdue" style="margin-bottom:8px" aria-label="Due date">
   <button class="btn" data-act="addhbc">Add project</button></div>
   ${list.length?list.map(h=>`<div class="card"><h2 style="font-size:16px">${esc(h.title)} <small style="font-weight:400;color:var(--mute)">&middot; ${esc(clsName(h.classId))} &middot; ${esc(h.subject)}</small></h2>
-  <p class="hint" style="margin:0 0 8px">${esc(h.description\vert{}\vert{}'')}${h.due?' &middot; due '+h.due:''}</p>
+  <p class="hint" style="margin:0 0 8px">${esc(h.description||'')}${h.due?' &middot; due '+h.due:''}</p>
   <select data-act2="hbcstage" data-id="${h.id}" aria-label="Stage">${HBC_STAGES.map(x=>`<option${x===h.stage?' selected':''}>${x}</option>`).join('')}</select>
   <button class="ghost" data-act="delhbc" data-id="${h.id}" style="margin-left:6px">Remove</button></div>`).join(''):'<p class="hint">No HBC projects logged for this school yet.</p>'}
   <p class="hint">Heritage-Based Curriculum continuous assessment projects, tracked by stage from planning to marking.</p>`;
@@ -311,7 +311,7 @@ function viewConduct(){
   return `<div class="bar"><select data-bind="cls" aria-label="Class">${classOpts()}</select></div>
   <ul class="rows">${list.map(s=>{const n=recs(s.id).length;return `<li><span class="nm">${esc(s.name)}${n?` <small>${n} record${n>1?'s':''}</small>`:''}</span><button class="ghost" data-act="con" data-id="${s.id}">${cur&&cur.id===s.id?'Close':'Open'}</button></li>`}).join('')}</ul>
   ${cur?`<div class="card"><h2>${esc(cur.name)}</h2>
-  <div class="row2" style="margin-bottom:8px"><input type="date" id="cd" value="${today()}" aria-label="Date"><select id="cc" aria-label="Category">${CON_CATS.map(x=>`<option>${x}</option>`).join('')}</i></select></div>
+  <div class="row2" style="margin-bottom:8px"><input type="date" id="cd" value="${today()}" aria-label="Date"><select id="cc" aria-label="Category">${CON_CATS.map(x=>`<option>${x}</option>`).join('')}</select></div>
   <textarea id="cdesc" placeholder="What happened, factually" style="min-height:70px;margin-bottom:8px"></textarea>
   <input type="text" id="cact" placeholder="Action taken, e.g. spoken to, guardian informed" style="margin-bottom:8px">
   <button class="btn" data-act="addcon">Save record</button>
@@ -374,7 +374,7 @@ document.addEventListener('click',e=>{
     S.hbc.push({id:uid(),classId:ui.cls,subject:sub,title:tt,description:ds,due:du,stage:'Planned'});save();toast('Project added')}
   else if(act==='delhbc'){S.hbc=S.hbc.filter(h=>h.id!==id);save();toast('Removed')}
   else if(act==='con'){ui.con=ui.con===id?'':id}
-  else if(act==='addcon'){const d=$('cd').value\vert{}\vert{}today(),c=$('cc').value,ds=$('cdesc').value.trim(),ac=$('cact').value.trim();
+  else if(act==='addcon'){const d=$('cd').value||today(),c=$('cc').value,ds=$('cdesc').value.trim(),ac=$('cact').value.trim();
     if(!ds){toast('Describe what happened');return}
     S.conduct.push({id:uid(),studentId:ui.con,date:d,category:c,description:ds,action:ac});save();toast('Record saved')}
   else if(act==='stu'){ui.stu=ui.stu===id?'':id}
