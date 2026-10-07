@@ -86,7 +86,7 @@ const SEED=[
 {id:'CVT-PRI',name:'Chivata Primary School',type:'PRIMARY',alias:''},
 {id:'CVT-SEC',name:'Chivata Secondary School',type:'SECONDARY',alias:''},
 {id:'ZIM-PRI',name:'Zimhungu Primary School',type:'PRIMARY',alias:''}];
-let S={schools:SEED,cur:'DAN-SEC',classes:[],students:[],att:{},tests:[],marks:{},charges:[],pay:[],adj:[],hbc:[],conduct:[],staff:[],staffAtt:{},security:{staffPin:'0000',adminPin:'1234'}};
+let S={schools:SEED,cur:'DAN-SEC',classes:[],students:[],att:{},tests:[],marks:{},charges:[],pay:[],adj:[],hbc:[],conduct:[],staff:[],staffAtt:{},staffTimes:{},security:{staffPin:'0000',adminPin:'1234'}};
 let ui={tab:'home',cls:'',date:today(),month:today().slice(0,7),test:'',stu:'',rcpt:'',hbc:'',con:'',lock:'staff',lockErr:''};
 const $=id=>document.getElementById(id);
 function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
@@ -97,7 +97,7 @@ function load(){try{const r=localStorage.getItem(KEY);if(r){const d=JSON.parse(r
   if(!S.schools.find(z=>z.id==='ZIM-PRI'))S.schools.push({id:'ZIM-PRI',name:'Zimhungu Primary School',type:'PRIMARY',alias:''})
   SEED.forEach(z=>{if(!S.schools.find(y=>y.id===z.id))S.schools.push(z)})
   if(S.cur==='MUR-PRI'||S.cur==='MUR-SEC')S.cur='DAN-SEC'
-  if(!S.staff)S.staff=[];if(!S.staffAtt)S.staffAtt={}}
+  if(!S.staff)S.staff=[];if(!S.staffAtt)S.staffAtt={};if(!S.staffTimes)S.staffTimes={}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Could not save on this browser. Copy a backup now.')}}
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display='none',2600)}
 const STATUSES=['Active','Transferred out','Withdrawn','Completed','Pending verification'];
@@ -134,7 +134,7 @@ function viewRegister(){
   <p class="hint">P present, A absent, L late. Tap again to clear. A learner left unmarked is not counted as absent.</p>
   <div class="card"><h2>Staff register &middot; ${ui.date}</h2>
   ${staffList.length?`<div class="tally"><b>${sp}</b> present &middot; <b>${sa}</b> absent &middot; <b>${sl}</b> late &middot; <b>${sun}</b> not marked</div>
-  <ul class="rows">${staffList.map(x=>`<li><span class="nm">${esc(x.name)}<small>${esc(x.role||'')}</small></span><span class="seg">${['P','A','L'].map(v=>`<button class="${v}${sday[x.id]===v?' on':''}" data-act="smark" data-id="${x.id}" data-v="${v}" aria-pressed="${sday[x.id]===v}" aria-label="${{P:'Present',A:'Absent',L:'Late'}[v]} for ${esc(x.name)}">${v}</button>`).join('')}</span></li>`).join('')}</ul>`
+  <ul class="rows">${staffList.map(x=>{const t=(S.staffTimes[ui.date]||{})[x.id]||{};return `<li style="flex-wrap:wrap"><span class="nm" style="flex:1 0 100%">${esc(x.name)}<small>${esc(x.role||'')}</small></span><span class="seg">${['P','A','L'].map(v=>`<button class="${v}${sday[x.id]===v?' on':''}" data-act="smark" data-id="${x.id}" data-v="${v}" aria-pressed="${sday[x.id]===v}" aria-label="${{P:'Present',A:'Absent',L:'Late'}[v]} for ${esc(x.name)}">${v}</button>`).join('')}</span><span style="display:flex;gap:6px;align-items:center;margin-top:4px;flex:1 0 100%;flex-wrap:wrap"><button class="ghost" data-act="punch" data-id="${x.id}" data-v="in" style="padding:5px 9px">Punch in</button><input type="time" value="${t.in||''}" data-st="in" data-id="${x.id}" aria-label="Clock in time for ${esc(x.name)}" style="width:auto;padding:4px"><button class="ghost" data-act="punch" data-id="${x.id}" data-v="out" style="padding:5px 9px">Punch out</button><input type="time" value="${t.out||''}" data-st="out" data-id="${x.id}" aria-label="Clock out time for ${esc(x.name)}" style="width:auto;padding:4px"></span></li>`}).join('')}</ul>`
   :'<p class="hint">No staff added yet for this school. Add staff on the Staff tile from Home.</p>'}</div>`;
 }
 
@@ -452,6 +452,8 @@ document.addEventListener('click',e=>{
     S.staff.push({id:uid(),schoolId:S.cur,name:n,role:r});save();toast('Staff added')}
   else if(act==='delstaff'){S.staff=S.staff.filter(x=>x.id!==id);for(const d in S.staffAtt)delete S.staffAtt[d][id];save();toast('Staff removed')}
   else if(act==='smark'){const d=S.staffAtt[ui.date]=S.staffAtt[ui.date]||{};if(d[id]===v)delete d[id];else d[id]=v;save()}
+  else if(act==='punch'){const now=new Date(),hh=String(now.getHours()).padStart(2,'0'),mm=String(now.getMinutes()).padStart(2,'0');
+    const dt=S.staffTimes[ui.date]=S.staffTimes[ui.date]||{};dt[id]=dt[id]||{};dt[id][v]=hh+':'+mm;save();toast((v==='in'?'Punched in at ':'Punched out at ')+hh+':'+mm)}
   else if(act==='addtest'){const nm=$('tn').value.trim(),sb=$('ts').value.trim(),mx=parseFloat($('tm').value),pp=parseFloat($('tp').value)||50;
     if(!nm||!sb||!(mx>0)){toast('Enter test name, subject and total marks');return}
     const t={id:uid(),classId:ui.cls,name:nm,subject:sb,max:mx,pass:pp,date:ui.date};S.tests.push(t);ui.test=t.id;save();toast('Test created')}
@@ -463,10 +465,11 @@ document.addEventListener('click',e=>{
     (d.pay||[]).forEach(x=>{const y=S.pay.find(q=>q.id===x.id);if(y&&x.reversed&&!y.reversed){y.reversed=true;y.reason=x.reason}});
     for(const dt in (d.att||{}))S.att[dt]=Object.assign({},d.att[dt],S.att[dt]||{});
     S.staffAtt=S.staffAtt||{};for(const dt in (d.staffAtt||{}))S.staffAtt[dt]=Object.assign({},d.staffAtt[dt],S.staffAtt[dt]||{});
+    S.staffTimes=S.staffTimes||{};for(const dt in (d.staffTimes||{}))S.staffTimes[dt]=Object.assign({},d.staffTimes[dt],S.staffTimes[dt]||{});
     for(const t in (d.marks||{}))S.marks[t]=Object.assign({},d.marks[t],S.marks[t]||{});
     save();toast('Backup merged')}catch(x){toast('That is not a valid backup');return}}
   else if(act==='restore'){try{const d=JSON.parse($('rsbox').value);if(!d||!Array.isArray(d.classes)||!Array.isArray(d.students))throw 0;
-    S=Object.assign({schools:S.schools,cur:S.cur,att:{},tests:[],marks:{},charges:[],pay:[],adj:[],hbc:[],conduct:[],staff:[],staffAtt:{},security:{staffPin:'0000',adminPin:'1234'}},d);save();toast('Backup restored')}catch(x){toast('That is not a valid backup');return}}
+    S=Object.assign({schools:S.schools,cur:S.cur,att:{},tests:[],marks:{},charges:[],pay:[],adj:[],hbc:[],conduct:[],staff:[],staffAtt:{},staffTimes:{},security:{staffPin:'0000',adminPin:'1234'}},d);save();toast('Backup restored')}catch(x){toast('That is not a valid backup');return}}
   render();
 });
 function doAct(act,id,v){
@@ -478,6 +481,7 @@ function doAct(act,id,v){
 document.addEventListener('change',e=>{
   if(e.target.dataset.act2==='hbcstage'){const h=S.hbc.find(x=>x.id===e.target.dataset.id);if(h){h.stage=e.target.value;save();toast('Stage updated')}return}
   if(e.target.dataset.act2==='status'){const st=S.students.find(x=>x.id===e.target.dataset.id);if(st){st.status=e.target.value;delete st.archived;save();toast('Status updated')}return}
+  if(e.target.dataset.st){const dt=S.staffTimes[ui.date]=S.staffTimes[ui.date]||{};const id=e.target.dataset.id;dt[id]=dt[id]||{};dt[id][e.target.dataset.st]=e.target.value;save();return}
   if(e.target.dataset.mark){const t=S.tests.find(x=>x.id===ui.test);if(!t)return;
     const id=e.target.dataset.mark,m=S.marks[t.id]=S.marks[t.id]||{};let v=e.target.value.trim().toUpperCase();
     if(v==='')delete m[id];else if(v==='A')m[id]='A';
