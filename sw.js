@@ -1,5 +1,5 @@
 // Change this number whenever you upload a new index.html, so phones pick up the update.
-const CACHE = 'chimedza-v11';
+const CACHE = 'chimedza-v12';
 
 // The page itself must be saved for the app to work offline. If it cannot be saved,
 // installation fails and is retried later, instead of pretending to be ready.

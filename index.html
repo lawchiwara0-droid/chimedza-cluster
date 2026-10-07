@@ -86,7 +86,7 @@ const SEED=[
 {id:'CVT-PRI',name:'Chivata Primary School',type:'PRIMARY',alias:''},
 {id:'CVT-SEC',name:'Chivata Secondary School',type:'SECONDARY',alias:''},
 {id:'ZIM-PRI',name:'Zimhungu Primary School',type:'PRIMARY',alias:''}];
-let S={schools:SEED,cur:'DAN-SEC',classes:[],students:[],att:{},tests:[],marks:{},charges:[],pay:[],adj:[],hbc:[],conduct:[],security:{staffPin:'0000',adminPin:'1234'}};
+let S={schools:SEED,cur:'DAN-SEC',classes:[],students:[],att:{},tests:[],marks:{},charges:[],pay:[],adj:[],hbc:[],conduct:[],staff:[],staffAtt:{},security:{staffPin:'0000',adminPin:'1234'}};
 let ui={tab:'home',cls:'',date:today(),month:today().slice(0,7),test:'',stu:'',rcpt:'',hbc:'',con:'',lock:'staff',lockErr:''};
 const $=id=>document.getElementById(id);
 function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
@@ -96,7 +96,8 @@ function load(){try{const r=localStorage.getItem(KEY);if(r){const d=JSON.parse(r
   S.schools=(S.schools||[]).filter(z=>z.id!=='MUR-PRI'&&z.id!=='MUR-SEC')
   if(!S.schools.find(z=>z.id==='ZIM-PRI'))S.schools.push({id:'ZIM-PRI',name:'Zimhungu Primary School',type:'PRIMARY',alias:''})
   SEED.forEach(z=>{if(!S.schools.find(y=>y.id===z.id))S.schools.push(z)})
-  if(S.cur==='MUR-PRI'||S.cur==='MUR-SEC')S.cur='DAN-SEC'}
+  if(S.cur==='MUR-PRI'||S.cur==='MUR-SEC')S.cur='DAN-SEC'
+  if(!S.staff)S.staff=[];if(!S.staffAtt)S.staffAtt={}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Could not save on this browser. Copy a backup now.')}}
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display='none',2600)}
 const STATUSES=['Active','Transferred out','Withdrawn','Completed','Pending verification'];
@@ -117,13 +118,24 @@ function empty(msg){return `<div class="empty">${msg}<br><br><button class="btn"
 function viewRegister(){
   if(!MC().length||!activeIn(ui.cls).length)return empty('Add a class and some learners first.');
   const list=activeIn(ui.cls),day=S.att[ui.date]||{};
-  let p=0,a=0,l=0;list.forEach(s=>{const v=day[s.id];if(v==='P')p++;else if(v==='A')a++;else if(v==='L')l++});
+  let p=0,a=0,l=0,pm=0,pf=0,am=0,af=0;
+  list.forEach(s=>{const v=day[s.id],sx=(s.sex||'').toUpperCase();
+    if(v==='P'){p++;if(sx==='M')pm++;else if(sx==='F')pf++}
+    else if(v==='A'){a++;if(sx==='M')am++;else if(sx==='F')af++}
+    else if(v==='L')l++});
   const un=list.length-p-a-l;
+  const staffList=S.staff.filter(x=>x.schoolId===S.cur),sday=S.staffAtt[ui.date]||{};
+  let sp=0,sa=0,sl=0;staffList.forEach(x=>{const v=sday[x.id];if(v==='P')sp++;else if(v==='A')sa++;else if(v==='L')sl++});
+  const sun=staffList.length-sp-sa-sl;
   return `<div class="bar"><select data-bind="cls" aria-label="Class">${classOpts()}</select><input type="date" data-bind="date" value="${ui.date}" aria-label="Date"></div>
-  <div class="tally"><b>${p}</b> present &middot; <b>${a}</b> absent &middot; <b>${l}</b> late &middot; <b>${un}</b> not marked</div>
+  <div class="tally">Learners &middot; <b>${p}</b> present (${pm} male, ${pf} female) &middot; <b>${a}</b> absent (${am} male, ${af} female) &middot; <b>${l}</b> late &middot; <b>${un}</b> not marked</div>
   <button class="ghost" data-act="allp">Mark all unmarked as present</button>
   <ul class="rows">${list.map(s=>`<li><span class="nm">${esc(s.name)}<small>${esc(s.sex||'')}</small></span><span class="seg">${['P','A','L'].map(v=>`<button class="${v}${day[s.id]===v?' on':''}" data-act="mark" data-id="${s.id}" data-v="${v}" aria-pressed="${day[s.id]===v}" aria-label="${{P:'Present',A:'Absent',L:'Late'}[v]} for ${esc(s.name)}">${v}</button>`).join('')}</span></li>`).join('')}</ul>
-  <p class="hint">P present, A absent, L late. Tap again to clear. A learner left unmarked is not counted as absent.</p>`;
+  <p class="hint">P present, A absent, L late. Tap again to clear. A learner left unmarked is not counted as absent.</p>
+  <div class="card"><h2>Staff register &middot; ${ui.date}</h2>
+  ${staffList.length?`<div class="tally"><b>${sp}</b> present &middot; <b>${sa}</b> absent &middot; <b>${sl}</b> late &middot; <b>${sun}</b> not marked</div>
+  <ul class="rows">${staffList.map(x=>`<li><span class="nm">${esc(x.name)}<small>${esc(x.role||'')}</small></span><span class="seg">${['P','A','L'].map(v=>`<button class="${v}${sday[x.id]===v?' on':''}" data-act="smark" data-id="${x.id}" data-v="${v}" aria-pressed="${sday[x.id]===v}" aria-label="${{P:'Present',A:'Absent',L:'Late'}[v]} for ${esc(x.name)}">${v}</button>`).join('')}</span></li>`).join('')}</ul>`
+  :'<p class="hint">No staff added yet for this school. Add staff on the Staff tile from Home.</p>'}</div>`;
 }
 
 function viewStudents(){
@@ -230,7 +242,7 @@ function viewHome(){
   return `<div class="card"><h2>${esc(sc.name)}</h2><p class="hint" style="margin:0">${sc.type==='PRIMARY'?'Primary':'Secondary'} school${sc.alias?' &middot; also called '+esc(sc.alias):''}</p>
   <div class="tally" style="margin:8px 0 0"><b>${ss.length}</b> learners &middot; <b>${cs.length}</b> classes &middot; today <b>${p}</b> present, <b>${a}</b> absent, <b>${l}</b> late</div>
   ${noTeacher.length?`<p class="hint low" style="margin-top:8px">⚠ No class teacher set for: ${noTeacher.map(c=>esc(c.name)).join(', ')}. Add one in Learners.</p>`:''}</div>
-  <div class="grid">${tile('register','\u{1F4CB}','Register','Daily attendance')}${tile('marks','\u{1F4DD}','Marks','Tests and results')}${tile('students','\u{1F465}','Learners','Classes and names')}${tile('summary','\u{1F4CA}','Summary','Attendance rates')}${tile('print','\u{1F5A8}\uFE0F','Print','Paper register')}${tile('hbc','🎓','HBC Projects','Heritage-Based Curriculum')}${tile('conduct','📓','Conduct','Behaviour records')}${tile('fees','\u{1F4B5}','Fees','Charges and payments')}${tile('cluster','\u{1F3EB}','Cluster','All nine schools')}${tile('backup','\u{1F4BE}','Backup','Export and merge')}</div>`;
+  <div class="grid">${tile('register','\u{1F4CB}','Register','Daily attendance')}${tile('marks','\u{1F4DD}','Marks','Tests and results')}${tile('students','\u{1F465}','Learners','Classes and names')}${tile('summary','\u{1F4CA}','Summary','Attendance rates')}${tile('print','\u{1F5A8}\uFE0F','Print','Paper register')}${tile('staff','🧑‍🏫','Staff','Roster and daily log')}${tile('hbc','🎓','HBC Projects','Heritage-Based Curriculum')}${tile('conduct','📓','Conduct','Behaviour records')}${tile('fees','\u{1F4B5}','Fees','Charges and payments')}${tile('cluster','\u{1F3EB}','Cluster','All nine schools')}${tile('backup','\u{1F4BE}','Backup','Export and merge')}</div>`;
 }
 
 function viewCluster(){
@@ -299,6 +311,18 @@ function payCsv(){
   return out.join('\n');
 }
 
+const STAFF_ROLES=['Teacher','Head','Deputy Head','Senior Woman','Senior Man','HOD','Non-teaching'];
+
+function viewStaff(){
+  const list=S.staff.filter(x=>x.schoolId===S.cur);
+  return `<div class="card"><h2>Add staff member</h2>
+  <div class="row2" style="margin-bottom:8px"><input type="text" id="sfn" placeholder="Full name" aria-label="Staff name"><select id="sfr" aria-label="Role">${STAFF_ROLES.map(r=>`<option>${r}</option>`).join('')}</select></div>
+  <button class="btn" data-act="addstaff">Add staff</button></div>
+  <div class="card"><h2>${esc(curSchool().name)} staff (${list.length})</h2>
+  ${list.length?`<ul class="rows" style="margin:0">${list.map(x=>`<li><span class="nm">${esc(x.name)}<small>${esc(x.role||'')}</small></span><button class="ghost" data-act="delstaff" data-id="${x.id}">Remove</button></li>`).join('')}</ul>`:'<p class="hint">No staff added yet.</p>'}
+  <p class="hint">Mark daily staff attendance on the Register tab, below the class register.</p></div>`;
+}
+
 const HBC_STAGES=['Planned','In progress','Submitted','Assessed'];
 
 function viewHbc(){
@@ -365,7 +389,7 @@ function render(){
   {const m=MC();if(!m.length)ui.cls='';else if(!m.find(c=>c.id===ui.cls))ui.cls=m[0].id}
   $('sch').innerHTML=S.schools.map(z=>`<option value="${z.id}"${z.id===S.cur?' selected':''}>${esc(z.name)}</option>`).join('');
   const T=[['home','🏠','Home'],['register','📋','Register'],['marks','📝','Marks'],['students','👥','Learners']];
-  $('app').innerHTML=`<nav>${T.map(t=>`<button class="${ui.tab===t[0]?'on':''}" data-act="tab" data-v="${t[0]}"><span>${t[1]}</span>${t[2]}</button>`).join('')}</nav>`+({home:viewHome,cluster:viewCluster,fees:viewFees,receipt:viewReceipt,hbc:viewHbc,conduct:viewConduct,register:viewRegister,students:viewStudents,marks:viewMarks,summary:viewSummary,print:viewPrint,backup:viewBackup}[ui.tab])();
+  $('app').innerHTML=`<nav>${T.map(t=>`<button class="${ui.tab===t[0]?'on':''}" data-act="tab" data-v="${t[0]}"><span>${t[1]}</span>${t[2]}</button>`).join('')}</nav>`+({home:viewHome,cluster:viewCluster,fees:viewFees,receipt:viewReceipt,hbc:viewHbc,conduct:viewConduct,staff:viewStaff,register:viewRegister,students:viewStudents,marks:viewMarks,summary:viewSummary,print:viewPrint,backup:viewBackup}[ui.tab])();
 }
 
 document.addEventListener('click',e=>{
@@ -423,6 +447,11 @@ document.addEventListener('click',e=>{
     const u=cur==='USD'?a:a/rt,n=S.pay.filter(x=>x.schoolId===S.cur).length+1;
     const p={id:uid(),schoolId:S.cur,studentId:s.id,amount:a,cur,rate:cur==='USD'?1:rt,usd:Math.round(u*100)/100,method:$('pm').value,date:today(),receipt:S.cur+'-'+String(n).padStart(4,'0'),reversed:false};
     S.pay.push(p);ui.rcpt=p.id;ui.tab='receipt';save()}
+  else if(act==='addstaff'){const n=$('sfn').value.trim(),r=$('sfr').value;
+    if(!n){toast('Enter a name');return}
+    S.staff.push({id:uid(),schoolId:S.cur,name:n,role:r});save();toast('Staff added')}
+  else if(act==='delstaff'){S.staff=S.staff.filter(x=>x.id!==id);for(const d in S.staffAtt)delete S.staffAtt[d][id];save();toast('Staff removed')}
+  else if(act==='smark'){const d=S.staffAtt[ui.date]=S.staffAtt[ui.date]||{};if(d[id]===v)delete d[id];else d[id]=v;save()}
   else if(act==='addtest'){const nm=$('tn').value.trim(),sb=$('ts').value.trim(),mx=parseFloat($('tm').value),pp=parseFloat($('tp').value)||50;
     if(!nm||!sb||!(mx>0)){toast('Enter test name, subject and total marks');return}
     const t={id:uid(),classId:ui.cls,name:nm,subject:sb,max:mx,pass:pp,date:ui.date};S.tests.push(t);ui.test=t.id;save();toast('Test created')}
@@ -430,13 +459,14 @@ document.addEventListener('click',e=>{
   else if(act==='copy'){const t=$(v);t.select();let ok=false;try{ok=document.execCommand('copy')}catch(x){}
     if(navigator.clipboard){navigator.clipboard.writeText(t.value).then(()=>toast('Copied'),()=>toast(ok?'Copied':'Press and hold to copy'))}else toast(ok?'Copied':'Press and hold to copy');return}
   else if(act==='merge'){try{const d=JSON.parse($('rsbox').value);if(!d||!Array.isArray(d.classes)||!Array.isArray(d.students))throw 0;
-    ['classes','students','tests','charges','pay','adj','hbc','conduct'].forEach(k=>{const have=new Set(S[k].map(x=>x.id));(d[k]||[]).forEach(x=>{if(!have.has(x.id))S[k].push(x)})});
+    ['classes','students','tests','charges','pay','adj','hbc','conduct','staff'].forEach(k=>{const have=new Set((S[k]||(S[k]=[])).map(x=>x.id));(d[k]||[]).forEach(x=>{if(!have.has(x.id))S[k].push(x)})});
     (d.pay||[]).forEach(x=>{const y=S.pay.find(q=>q.id===x.id);if(y&&x.reversed&&!y.reversed){y.reversed=true;y.reason=x.reason}});
     for(const dt in (d.att||{}))S.att[dt]=Object.assign({},d.att[dt],S.att[dt]||{});
+    S.staffAtt=S.staffAtt||{};for(const dt in (d.staffAtt||{}))S.staffAtt[dt]=Object.assign({},d.staffAtt[dt],S.staffAtt[dt]||{});
     for(const t in (d.marks||{}))S.marks[t]=Object.assign({},d.marks[t],S.marks[t]||{});
     save();toast('Backup merged')}catch(x){toast('That is not a valid backup');return}}
   else if(act==='restore'){try{const d=JSON.parse($('rsbox').value);if(!d||!Array.isArray(d.classes)||!Array.isArray(d.students))throw 0;
-    S=Object.assign({schools:S.schools,cur:S.cur,att:{},tests:[],marks:{},charges:[],pay:[],adj:[],hbc:[],conduct:[],security:{staffPin:'0000',adminPin:'1234'}},d);save();toast('Backup restored')}catch(x){toast('That is not a valid backup');return}}
+    S=Object.assign({schools:S.schools,cur:S.cur,att:{},tests:[],marks:{},charges:[],pay:[],adj:[],hbc:[],conduct:[],staff:[],staffAtt:{},security:{staffPin:'0000',adminPin:'1234'}},d);save();toast('Backup restored')}catch(x){toast('That is not a valid backup');return}}
   render();
 });
 function doAct(act,id,v){
